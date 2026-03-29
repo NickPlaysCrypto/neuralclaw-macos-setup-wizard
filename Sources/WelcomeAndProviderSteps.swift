@@ -1,0 +1,542 @@
+import SwiftUI
+
+// MARK: - Step 0: AI Usage Questionnaire
+
+struct AIUsageStep: View {
+    @EnvironmentObject var state: SetupState
+    @State private var headerOpacity: Double = 0
+    @State private var cardsOffset: CGFloat = 20
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 36)
+
+            // Header
+            VStack(spacing: 8) {
+                Text("Which of these AI companies\ndo you use?")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [DS.text, DS.accent],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+
+                Text("Select all that apply — this helps us configure NeuralClaw for you.")
+                    .font(.system(size: 14))
+                    .foregroundColor(DS.textMuted)
+                    .multilineTextAlignment(.center)
+            }
+            .opacity(headerOpacity)
+            .padding(.bottom, 28)
+
+            // Service cards — 3 in a row
+            HStack(spacing: 14) {
+                ForEach(ConsumerAI.allCases) { service in
+                    ConsumerAICard(
+                        service: service,
+                        isSelected: state.selectedServices.contains(service),
+                        onToggle: { state.toggleService(service) }
+                    )
+                }
+            }
+            .offset(y: cardsOffset)
+            .opacity(headerOpacity)
+            .padding(.horizontal, 40)
+
+            Spacer()
+
+            // Bottom actions
+            VStack(spacing: 14) {
+                // Continue button (only if services selected)
+                if !state.selectedServices.isEmpty {
+                    Button(action: state.chooseConsumerPath) {
+                        HStack(spacing: 6) {
+                            Text("Continue")
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(DS.accentGradient)
+                        )
+                        .shadow(color: DS.accent.opacity(0.3), radius: 8, y: 4)
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                // "I have an API key" link
+                Button(action: state.chooseAPIKeyPath) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 12))
+                        Text("I have an API key")
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    .foregroundColor(DS.textMuted)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 20)
+                    .background(
+                        Capsule()
+                            .stroke(DS.border, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 40)
+            .padding(.bottom, 24)
+            .animation(.easeInOut(duration: 0.25), value: state.selectedServices)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
+                headerOpacity = 1
+                cardsOffset = 0
+            }
+        }
+    }
+}
+
+struct ConsumerAICard: View {
+    let service: ConsumerAI
+    let isSelected: Bool
+    let onToggle: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onToggle) {
+            VStack(spacing: 12) {
+                // Logo icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: service.gradientColors.map { $0.opacity(isSelected ? 0.25 : 0.12) },
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                        .overlay(
+                            Circle()
+                                .stroke(service.iconColor.opacity(isSelected ? 0.5 : 0.15), lineWidth: 1.5)
+                        )
+
+                    Image(systemName: service.icon)
+                        .font(.system(size: 24))
+                        .foregroundColor(service.iconColor)
+                }
+
+                // Product name
+                Text(service.productName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(DS.text)
+
+                // Company name
+                Text(service.companyName)
+                    .font(.system(size: 12))
+                    .foregroundColor(DS.textMuted)
+
+                // Selection indicator
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? service.iconColor : DS.textDim, lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+
+                    if isSelected {
+                        Circle()
+                            .fill(service.iconColor)
+                            .frame(width: 22, height: 22)
+                            .overlay(
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                            )
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+            }
+            .padding(.vertical, 20)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? service.iconColor.opacity(0.06)
+                          : (isHovered ? DS.surfaceHover : Color.black.opacity(0.2)))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? service.iconColor.opacity(0.4) : DS.border, lineWidth: 1)
+                    )
+            )
+            .shadow(color: isSelected ? service.iconColor.opacity(0.15) : .clear, radius: 10)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+
+// MARK: - OAuth Info Step (Consumer Path)
+
+struct OAuthInfoStep: View {
+    @EnvironmentObject var state: SetupState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            stepIcon("link")
+            stepTitle("Connect Your Accounts")
+            stepDesc("Here's how NeuralClaw can connect with the services you use. Log in to authorize NeuralClaw to work on your behalf.")
+
+            VStack(spacing: 10) {
+                ForEach(ConsumerAI.allCases) { service in
+                    let isSelected = state.selectedServices.contains(service)
+                    if isSelected {
+                        OAuthServiceRow(service: service)
+                    }
+                }
+
+                // If nothing is selected (shouldn't happen, but safety)
+                if state.selectedServices.isEmpty {
+                    Text("No services selected.")
+                        .font(.system(size: 14))
+                        .foregroundColor(DS.textMuted)
+                        .padding(.top, 10)
+                }
+            }
+
+            Spacer()
+
+            // Bottom hint link
+            Button(action: state.goNext) {
+                HStack(spacing: 6) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 13))
+                    Text("Learn how to get an API key")
+                        .font(.system(size: 13, weight: .medium))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .foregroundColor(DS.accent)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(DS.accent.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(DS.accent.opacity(0.12), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 40)
+        .padding(.top, 32)
+    }
+}
+
+struct OAuthServiceRow: View {
+    let service: ConsumerAI
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Service icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(
+                        LinearGradient(
+                            colors: service.gradientColors.map { $0.opacity(0.15) },
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: service.icon)
+                    .font(.system(size: 18))
+                    .foregroundColor(service.iconColor)
+            }
+
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(service.productName) by \(service.companyName)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(DS.text)
+
+                Text("Sign in with \(service.companyName) account")
+                    .font(.system(size: 12))
+                    .foregroundColor(DS.textMuted)
+            }
+
+            Spacer()
+
+            // Coming Soon tag + Log In button
+            HStack(spacing: 8) {
+                Text("Coming Soon")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundColor(Color(red: 0.98, green: 0.75, blue: 0.15))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color(red: 0.98, green: 0.75, blue: 0.15).opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color(red: 0.98, green: 0.75, blue: 0.15).opacity(0.15), lineWidth: 1)
+                            )
+                    )
+
+                Button(action: {}) {
+                    Text("Log In")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(DS.textMuted)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(DS.border, lineWidth: 1)
+                                )
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(true)
+                .opacity(0.6)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isHovered ? DS.surfaceHover : Color.black.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(DS.border, lineWidth: 1)
+                )
+        )
+        .onHover { isHovered = $0 }
+    }
+}
+
+// MARK: - API Key Guide Step (Consumer Path intermediary)
+
+struct APIKeyGuideStep: View {
+    @EnvironmentObject var state: SetupState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            stepIcon("key.viewfinder")
+            stepTitle("Get Your API Key")
+            stepDesc("Follow these steps to create an API key for your provider. You'll paste it on the next screen.")
+
+            ScrollView {
+                VStack(spacing: 14) {
+                    ForEach(Array(state.selectedServices.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { service in
+                        APIKeyGuideCard(service: service)
+                    }
+
+                    // If they somehow have no services selected
+                    if state.selectedServices.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "arrow.backward.circle")
+                                .font(.system(size: 24))
+                                .foregroundColor(DS.textDim)
+                            Text("Go back and select at least one provider.")
+                                .font(.system(size: 14))
+                                .foregroundColor(DS.textMuted)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 20)
+                    }
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            Spacer()
+        }
+        .padding(.horizontal, 40)
+        .padding(.top, 32)
+    }
+}
+
+struct APIKeyGuideCard: View {
+    let service: ConsumerAI
+    @State private var isExpanded = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            Button(action: { withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() } }) {
+                HStack(spacing: 12) {
+                    // Provider icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(
+                                LinearGradient(
+                                    colors: service.gradientColors.map { $0.opacity(0.2) },
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+
+                        Image(systemName: service.icon)
+                            .font(.system(size: 16))
+                            .foregroundColor(service.iconColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(service.productName) API Key")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(DS.text)
+
+                        Text(service.apiKeyURL)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundColor(DS.accent)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(DS.textMuted)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(14)
+
+            // Steps
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(service.apiKeySteps.enumerated()), id: \.offset) { idx, step in
+                        HStack(alignment: .top, spacing: 10) {
+                            // Step number
+                            ZStack {
+                                Circle()
+                                    .fill(DS.accent.opacity(0.12))
+                                    .frame(width: 22, height: 22)
+                                Text("\(idx + 1)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(DS.accent)
+                            }
+
+                            Text(step)
+                                .font(.system(size: 13))
+                                .foregroundColor(DS.text)
+                                .lineSpacing(2)
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.black.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(DS.border, lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - API Provider Step (API Key Path)
+
+struct APIProviderStep: View {
+    @EnvironmentObject var state: SetupState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            stepIcon("key.fill")
+            stepTitle("Choose Your API Provider")
+            stepDesc("Select the provider whose API key you have. NeuralClaw will use this to power its reasoning engine.")
+
+            // Provider grid — 3 columns for 5 providers (3+2)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                ForEach(AIProvider.allCases) { provider in
+                    ProviderCard(
+                        provider: provider,
+                        isSelected: state.provider == provider,
+                        onSelect: { state.selectProvider(provider) }
+                    )
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 40)
+        .padding(.top, 32)
+    }
+}
+
+struct ProviderCard: View {
+    let provider: AIProvider
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(provider.label)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(DS.text)
+
+                        Text(provider.desc)
+                            .font(.system(size: 11))
+                            .foregroundColor(DS.textMuted)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: provider.icon)
+                        .font(.system(size: 18))
+                        .foregroundColor(provider.iconColor)
+                }
+
+                // Badge
+                Text(provider.needsKey ? "API KEY" : "FREE")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundColor(provider.needsKey ? DS.accent : DS.accent3)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(provider.needsKey
+                                  ? DS.accent.opacity(0.15) : DS.accent3.opacity(0.15))
+                    )
+                    .padding(.top, 4)
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? DS.accent.opacity(0.06)
+                          : (isHovered ? DS.surfaceHover : Color.black.opacity(0.2)))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? DS.accent : DS.border, lineWidth: 1)
+                    )
+            )
+            .shadow(color: isSelected ? DS.accent.opacity(0.15) : .clear, radius: 8)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
