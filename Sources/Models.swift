@@ -93,17 +93,13 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Whether this service supports OAuth for agent connections (placeholder)
-    var supportsOAuth: Bool {
+    /// OAuth availability status for this service
+    var oauthStatus: OAuthAvailability {
         switch self {
-        case .google:    return true   // Google OAuth
-        case .openai:    return false  // Coming soon
-        case .anthropic: return false  // Coming soon
+        case .google:    return .available     // Google OAuth works
+        case .openai:    return .comingSoon    // Expected in the future
+        case .anthropic: return .unavailable   // Against TOS
         }
-    }
-
-    var oauthStatus: String {
-        supportsOAuth ? "OAuth Available" : "Coming Soon"
     }
 
     /// The corresponding API provider for key-based auth
@@ -268,6 +264,38 @@ enum FeaturePreset: String, CaseIterable {
                     "structured_output", "reflective_reasoning", "swarm", "dashboard"]
         case .full:
             return Set(SetupState.allFeatureIDs)
+        }
+    }
+}
+
+// MARK: - OAuth Availability
+
+enum OAuthAvailability {
+    case available      // OAuth login is ready to use
+    case comingSoon     // Expected to become available
+    case unavailable    // Not possible (e.g. against provider TOS)
+
+    var label: String {
+        switch self {
+        case .available:   return "Log In"
+        case .comingSoon:  return "Coming Soon"
+        case .unavailable: return "Unavailable"
+        }
+    }
+
+    var labelColor: Color {
+        switch self {
+        case .available:   return DS.accent3
+        case .comingSoon:  return Color(red: 0.98, green: 0.75, blue: 0.15)
+        case .unavailable: return DS.textMuted
+        }
+    }
+
+    var bgColor: Color {
+        switch self {
+        case .available:   return DS.accent3
+        case .comingSoon:  return Color(red: 0.98, green: 0.75, blue: 0.15)
+        case .unavailable: return DS.textMuted
         }
     }
 }

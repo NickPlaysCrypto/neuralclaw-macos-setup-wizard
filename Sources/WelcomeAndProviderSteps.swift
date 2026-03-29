@@ -245,6 +245,9 @@ struct OAuthInfoStep: View {
 struct OAuthServiceRow: View {
     let service: ConsumerAI
     @State private var isHovered = false
+    @State private var showTooltip = false
+
+    private var status: OAuthAvailability { service.oauthStatus }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -277,20 +280,65 @@ struct OAuthServiceRow: View {
 
             Spacer()
 
-            // Coming Soon tag + Log In button
+            // Right-side actions — varies by status
+            oauthActions
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isHovered ? DS.surfaceHover : Color.black.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(DS.border, lineWidth: 1)
+                )
+        )
+        .onHover { isHovered = $0 }
+    }
+
+    @ViewBuilder
+    private var oauthActions: some View {
+        switch status {
+        case .available:
+            // Active "Log In" button
+            Button(action: { /* TODO: trigger OAuth flow */ }) {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 12))
+                    Text("Log In")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(
+                            LinearGradient(
+                                colors: [DS.accent3, Color(red: 0.18, green: 0.83, blue: 0.75)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                )
+                .shadow(color: DS.accent3.opacity(0.3), radius: 6, y: 2)
+            }
+            .buttonStyle(.plain)
+
+        case .comingSoon:
+            // Amber "Coming Soon" tag + disabled "Log In"
             HStack(spacing: 8) {
                 Text("Coming Soon")
                     .font(.system(size: 9, weight: .bold))
                     .tracking(0.5)
-                    .foregroundColor(Color(red: 0.98, green: 0.75, blue: 0.15))
+                    .foregroundColor(status.labelColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(red: 0.98, green: 0.75, blue: 0.15).opacity(0.1))
+                            .fill(status.bgColor.opacity(0.1))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(red: 0.98, green: 0.75, blue: 0.15).opacity(0.15), lineWidth: 1)
+                                    .stroke(status.bgColor.opacity(0.15), lineWidth: 1)
                             )
                     )
 
@@ -311,20 +359,61 @@ struct OAuthServiceRow: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(true)
-                .opacity(0.6)
+                .opacity(0.5)
+            }
+
+        case .unavailable:
+            // Grey "Unavailable" tag + info tooltip
+            HStack(spacing: 6) {
+                Text("Unavailable")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundColor(DS.textMuted)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.04))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(DS.border, lineWidth: 1)
+                            )
+                    )
+
+                // Info icon with hover popover
+                ZStack {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 15))
+                        .foregroundColor(DS.textDim)
+                        .onHover { hovering in
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                showTooltip = hovering
+                            }
+                        }
+
+                    if showTooltip {
+                        Text("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
+                            .font(.system(size: 11))
+                            .foregroundColor(DS.text)
+                            .lineSpacing(2)
+                            .padding(12)
+                            .frame(width: 240)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(DS.surface)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(DS.border, lineWidth: 1)
+                                    )
+                                    .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
+                            )
+                            .offset(x: -100, y: 40)
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                            .zIndex(10)
+                    }
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(isHovered ? DS.surfaceHover : Color.black.opacity(0.15))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(DS.border, lineWidth: 1)
-                )
-        )
-        .onHover { isHovered = $0 }
     }
 }
 
