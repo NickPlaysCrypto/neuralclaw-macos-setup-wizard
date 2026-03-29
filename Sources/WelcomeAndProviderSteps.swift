@@ -383,7 +383,7 @@ struct OAuthServiceRow: View {
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: 15))
                     .foregroundColor(DS.textDim)
-                    .help("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
+                    .help("Not available — likely restricted by this provider's terms of service.")
             }
         }
     }
