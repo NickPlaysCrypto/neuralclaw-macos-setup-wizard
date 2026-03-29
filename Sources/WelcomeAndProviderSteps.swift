@@ -245,6 +245,7 @@ struct OAuthInfoStep: View {
 struct OAuthServiceRow: View {
     let service: ConsumerAI
     @State private var isHovered = false
+    @State private var showPopover = false
 
     private var status: OAuthAvailability { service.oauthStatus }
 
@@ -272,7 +273,9 @@ struct OAuthServiceRow: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DS.text)
 
-                Text("Sign in with \(service.companyName) account")
+                Text(status == .unavailable
+                     ? "Not available via login"
+                     : "Sign in with \(service.companyName) account")
                     .font(.system(size: 12))
                     .foregroundColor(DS.textMuted)
             }
@@ -299,7 +302,6 @@ struct OAuthServiceRow: View {
     private var oauthActions: some View {
         switch status {
         case .available:
-            // Active "Log In" button
             Button(action: { /* TODO: trigger OAuth flow */ }) {
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.right.circle.fill")
@@ -324,7 +326,6 @@ struct OAuthServiceRow: View {
             .buttonStyle(.plain)
 
         case .comingSoon:
-            // Amber "Coming Soon" tag + disabled "Log In"
             HStack(spacing: 8) {
                 Text("Coming Soon")
                     .font(.system(size: 9, weight: .bold))
@@ -362,7 +363,6 @@ struct OAuthServiceRow: View {
             }
 
         case .unavailable:
-            // Grey "Unavailable" tag + info tooltip
             HStack(spacing: 6) {
                 Text("Unavailable")
                     .font(.system(size: 9, weight: .bold))
@@ -379,11 +379,30 @@ struct OAuthServiceRow: View {
                             )
                     )
 
-                // Info icon with native macOS tooltip
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 15))
-                    .foregroundColor(DS.textDim)
-                    .help("Not available — likely restricted by this provider's terms of service.")
+                Button(action: { showPopover.toggle() }) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.system(size: 15))
+                        .foregroundColor(DS.textDim)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.orange)
+                            Text("Not Available")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        Text("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .frame(width: 260)
+                }
             }
         }
     }
