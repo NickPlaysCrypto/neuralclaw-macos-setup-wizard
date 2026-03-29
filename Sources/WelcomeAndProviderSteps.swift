@@ -245,7 +245,6 @@ struct OAuthInfoStep: View {
 struct OAuthServiceRow: View {
     let service: ConsumerAI
     @State private var isHovered = false
-    @State private var showTooltip = false
 
     private var status: OAuthAvailability { service.oauthStatus }
 
@@ -380,40 +379,11 @@ struct OAuthServiceRow: View {
                             )
                     )
 
-                // Info icon with hover popover
+                // Info icon with native macOS tooltip
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: 15))
                     .foregroundColor(DS.textDim)
-                    .padding(6) // enlarge hover hit area
-                    .contentShape(Rectangle())
-                    .onHover { hovering in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            showTooltip = hovering
-                        }
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        if showTooltip {
-                            Text("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
-                                .font(.system(size: 11))
-                                .foregroundColor(DS.text)
-                                .lineSpacing(2)
-                                .padding(12)
-                                .frame(width: 240, alignment: .leading)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(DS.surface)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .stroke(DS.border, lineWidth: 1)
-                                        )
-                                        .shadow(color: .black.opacity(0.4), radius: 12, y: 4)
-                                )
-                                .offset(x: -10, y: 6)
-                                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .zIndex(10)
+                    .help("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
             }
         }
     }
