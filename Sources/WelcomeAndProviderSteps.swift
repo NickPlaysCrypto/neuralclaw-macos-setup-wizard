@@ -212,33 +212,33 @@ struct OAuthInfoStep: View {
             stepTitle(panelTitle)
             stepDesc(panelSubtitle)
 
-            // Provider list — this frame is a volatile content object.
-            // The providers shown, their order, and their OAuth status
-            // are all managed by the VolatileContent registry.
-            VStack(spacing: 10) {
-                ForEach(ConsumerAI.allCases) { service in
-                    let isSelected = state.selectedServices.contains(service)
-                    if isSelected {
-                        OAuthServiceRow(service: service)
+            // Provider list — scrollable volatile content frame
+            ScrollView {
+                VStack(spacing: 10) {
+                    ForEach(ConsumerAI.allCases) { service in
+                        let isSelected = state.selectedServices.contains(service)
+                        if isSelected {
+                            OAuthServiceRow(service: service)
+                        }
                     }
-                }
 
-                // Local models option
-                localModelRow
+                    // Local models option
+                    localModelRow
 
-                // Direct API key input
-                apiKeyRow
+                    // Direct API key input
+                    apiKeyRow
 
-                // If nothing is selected (shouldn't happen, but safety)
-                if state.selectedServices.isEmpty && directAPIKey.isEmpty {
-                    Text("No services selected.")
-                        .font(.system(size: 14))
-                        .foregroundColor(DS.textMuted)
-                        .padding(.top, 10)
+                    // If nothing is selected (shouldn't happen, but safety)
+                    if state.selectedServices.isEmpty && directAPIKey.isEmpty {
+                        Text("No services selected.")
+                            .font(.system(size: 14))
+                            .foregroundColor(DS.textMuted)
+                            .padding(.top, 10)
+                    }
                 }
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             // Bottom hint link
             Button(action: state.goNext) {
