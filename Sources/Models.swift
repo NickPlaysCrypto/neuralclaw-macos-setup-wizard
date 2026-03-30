@@ -50,7 +50,7 @@ enum WizardPath: Equatable {
 // MARK: - Consumer AI Services (first page multi-select)
 
 enum ConsumerAI: String, CaseIterable, Identifiable {
-    case google, openai, anthropic
+    case google, openai, anthropic, openrouter, venice
 
     var id: String { rawValue }
 
@@ -66,41 +66,51 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
 
     private var defaultProductName: String {
         switch self {
-        case .google:    return "Gemini"
-        case .openai:    return "ChatGPT"
-        case .anthropic: return "Claude"
+        case .google:      return "Gemini"
+        case .openai:      return "ChatGPT"
+        case .anthropic:   return "Claude"
+        case .openrouter:  return "OpenRouter"
+        case .venice:      return "Venice"
         }
     }
 
     private var defaultCompanyName: String {
         switch self {
-        case .google:    return "Google"
-        case .openai:    return "OpenAI"
-        case .anthropic: return "Anthropic"
+        case .google:      return "Google"
+        case .openai:      return "OpenAI"
+        case .anthropic:   return "Anthropic"
+        case .openrouter:  return "OpenRouter"
+        case .venice:      return "Venice.ai"
         }
     }
 
     var icon: String {
         switch self {
-        case .google:    return "sparkles"
-        case .openai:    return "bolt.fill"
-        case .anthropic: return "brain.head.profile"
+        case .google:      return "sparkles"
+        case .openai:      return "bolt.fill"
+        case .anthropic:   return "brain.head.profile"
+        case .openrouter:  return "arrow.triangle.branch"
+        case .venice:      return "shield.checkered"
         }
     }
 
     var iconColor: Color {
         switch self {
-        case .google:    return Color(red: 0.26, green: 0.52, blue: 0.96)  // Google blue
-        case .openai:    return Color(red: 0.29, green: 0.84, blue: 0.63)  // OpenAI green
-        case .anthropic: return Color(red: 0.85, green: 0.65, blue: 0.40)  // Anthropic orange
+        case .google:      return Color(red: 0.26, green: 0.52, blue: 0.96)  // Google blue
+        case .openai:      return Color(red: 0.29, green: 0.84, blue: 0.63)  // OpenAI green
+        case .anthropic:   return Color(red: 0.85, green: 0.65, blue: 0.40)  // Anthropic orange
+        case .openrouter:  return Color(red: 0.40, green: 0.55, blue: 0.95)  // OpenRouter blue
+        case .venice:      return Color(red: 0.86, green: 0.44, blue: 0.84)  // Venice pink
         }
     }
 
     var gradientColors: [Color] {
         switch self {
-        case .google:    return [Color(red: 0.26, green: 0.52, blue: 0.96), Color(red: 0.91, green: 0.26, blue: 0.21)]
-        case .openai:    return [Color(red: 0.29, green: 0.84, blue: 0.63), Color(red: 0.10, green: 0.60, blue: 0.45)]
-        case .anthropic: return [Color(red: 0.85, green: 0.65, blue: 0.40), Color(red: 0.78, green: 0.42, blue: 0.25)]
+        case .google:      return [Color(red: 0.26, green: 0.52, blue: 0.96), Color(red: 0.91, green: 0.26, blue: 0.21)]
+        case .openai:      return [Color(red: 0.29, green: 0.84, blue: 0.63), Color(red: 0.10, green: 0.60, blue: 0.45)]
+        case .anthropic:   return [Color(red: 0.85, green: 0.65, blue: 0.40), Color(red: 0.78, green: 0.42, blue: 0.25)]
+        case .openrouter:  return [Color(red: 0.40, green: 0.55, blue: 0.95), Color(red: 0.25, green: 0.35, blue: 0.75)]
+        case .venice:      return [Color(red: 0.86, green: 0.44, blue: 0.84), Color(red: 0.65, green: 0.30, blue: 0.70)]
         }
     }
 
@@ -134,18 +144,22 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
 
     private var defaultOAuthStatus: String {
         switch self {
-        case .google:    return "available"
-        case .openai:    return "comingSoon"
-        case .anthropic: return "unavailable"
+        case .google:      return "available"
+        case .openai:      return "comingSoon"
+        case .anthropic:   return "unavailable"
+        case .openrouter:  return "unavailable"
+        case .venice:      return "unavailable"
         }
     }
 
     /// The corresponding API provider for key-based auth
     var apiProvider: AIProvider {
         switch self {
-        case .google:    return .openrouter  // Google doesn't have a direct API in our list
-        case .openai:    return .openai
-        case .anthropic: return .anthropic
+        case .google:      return .openrouter  // Google doesn't have a direct API in our list
+        case .openai:      return .openai
+        case .anthropic:   return .anthropic
+        case .openrouter:  return .openrouter
+        case .venice:      return .venice
         }
     }
 
@@ -163,9 +177,11 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
 
     private var defaultAPIKeyURL: String {
         switch self {
-        case .google:    return "aistudio.google.com/apikey"
-        case .openai:    return "platform.openai.com/api-keys"
-        case .anthropic: return "console.anthropic.com/settings/keys"
+        case .google:      return "aistudio.google.com/apikey"
+        case .openai:      return "platform.openai.com/api-keys"
+        case .anthropic:   return "console.anthropic.com/settings/keys"
+        case .openrouter:  return "openrouter.ai/keys"
+        case .venice:      return "venice.ai/settings/api"
         }
     }
 
@@ -191,6 +207,20 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
                 "Sign in or create an account",
                 "Go to Settings → API Keys",
                 "Click \"Create Key\" and copy it",
+            ]
+        case .openrouter:
+            return [
+                "Go to openrouter.ai",
+                "Sign in or create an account",
+                "Go to Keys in the dashboard",
+                "Click \"Create Key\" and copy it",
+            ]
+        case .venice:
+            return [
+                "Go to venice.ai",
+                "Sign in or create an account",
+                "Go to Settings → API",
+                "Generate a new key and copy it",
             ]
         }
     }

@@ -32,8 +32,8 @@ struct AIUsageStep: View {
             .opacity(headerOpacity)
             .padding(.bottom, 28)
 
-            // Service cards — 3 in a row
-            HStack(spacing: 14) {
+            // Service cards — grid layout (3+2)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3), spacing: 14) {
                 ForEach(ConsumerAI.allCases) { service in
                     ConsumerAICard(
                         service: service,
@@ -1403,10 +1403,13 @@ struct APIKeyGuideCard: View {
     }
 }
 
-// MARK: - API Provider Step (API Key Path)
-
 struct APIProviderStep: View {
     @EnvironmentObject var state: SetupState
+    @State private var apiKeyInput = ""
+    @State private var keySaved = false
+    @State private var showModelDetection = false
+    @State private var modelDetectionProgress: Double = 0.0
+    @State private var modelDetectionFailed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1414,14 +1417,73 @@ struct APIProviderStep: View {
             stepTitle("Choose Your API Provider")
             stepDesc("Select the provider whose API key you have. NeuralClaw will use this to power its reasoning engine.")
 
-            // Provider grid — 3 columns for 5 providers (3+2)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-                ForEach(AIProvider.allCases) { provider in
-                    ProviderCard(
-                        provider: provider,
-                        isSelected: state.provider == provider,
-                        onSelect: { state.selectProvider(provider) }
-                    )
+            ScrollView {
+                VStack(spacing: 10) {
+                    // Provider grid — 3 columns for 5 providers (3+2)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                        ForEach(AIProvider.allCases) { provider in
+                            ProviderCard(
+                                provider: provider,
+                                isSelected: state.provider == provider,
+                                onSelect: { state.selectProvider(provider) }
+                            )
+                        }
+                    }
+
+                    // Inline API key input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("API KEY FOR \(state.provider.label.uppercased())")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(DS.textMuted)
+                            .tracking(0.5)
+
+                        HStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "key.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(DS.textDim)
+
+                                SecureField(state.provider.keyPlaceholder, text: $apiKeyInput)
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .textFieldStyle(.plain)
+                                    .foregroundColor(DS.text)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.black.opacity(0.25))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(keySaved ? Color.green.opacity(0.3) : DS.border, lineWidth: 1)
+                                    )
+                            )
+
+                            // Save button
+                            Button(action: saveAndDetect) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: keySaved ? "checkmark.circle.fill" : "square.and.arrow.down")
+                                        .font(.system(size: 12))
+                                    Text(keySaved ? "Saved" : "Save")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .foregroundColor(keySaved ? .green : (apiKeyInput.isEmpty ? DS.textDim : DS.accent))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.black.opacity(0.2))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(keySaved ? Color.green.opacity(0.3) : DS.border, lineWidth: 1)
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(apiKeyInput.isEmpty)
+                        }
+                    }
+                    .padding(.top, 6)
                 }
             }
 
@@ -1429,6 +1491,130 @@ struct APIProviderStep: View {
         }
         .padding(.horizontal, 40)
         .padding(.top, 32)
+        .overlay {
+            if showModelDetection {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        if modelDetectionFailed {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(Color(red: 0.95, green: 0.65, blue: 0.20))
+
+                            Text("No models detected. Check the API key or pick a different provider.")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(DS.textMuted)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+
+                            Button(action: {
+                                showModelDetection = false
+                                modelDetectionFailed = false
+                            }) {
+                                Text("Close")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 28)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(DS.accent)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.white.opacity(0.08))
+                                        .frame(height: 6)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [DS.accent, Color(red: 0.55, green: 0.35, blue: 0.85)],
+                                                startPoint: .leading, endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: geo.size.width * modelDetectionProgress, height: 6)
+                                }
+                            }
+                            .frame(height: 6)
+
+                            Text("Detecting provider AI models")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(DS.text)
+                                .multilineTextAlignment(.center)
+
+                            HStack(spacing: 6) {
+                                Image(systemName: state.provider.icon)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(state.provider.iconColor)
+                                Text(state.provider.label)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(DS.textMuted)
+                            }
+
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .tint(DS.textMuted)
+                        }
+                    }
+                    .padding(28)
+                    .frame(width: 320)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(DS.border, lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                    )
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showModelDetection)
+                .onAppear {
+                    withAnimation(.linear(duration: 10)) {
+                        modelDetectionProgress = 1.0
+                    }
+                }
+            }
+        }
+    }
+
+    private func saveAndDetect() {
+        guard !apiKeyInput.isEmpty else { return }
+        state.apiKey = apiKeyInput
+        keySaved = true
+        modelDetectionFailed = false
+        modelDetectionProgress = 0.0
+        showModelDetection = true
+
+        // Quick detection for known providers (~3s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            if showModelDetection && !modelDetectionFailed {
+                let models = state.provider.models
+                if !models.isEmpty {
+                    showModelDetection = false
+                    state.goNext() // → model picker
+                }
+            }
+        }
+
+        // 10s timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            if showModelDetection && !modelDetectionFailed {
+                let models = state.provider.models
+                if !models.isEmpty {
+                    showModelDetection = false
+                    state.goNext()
+                } else {
+                    modelDetectionFailed = true
+                }
+            }
+        }
     }
 }
 
