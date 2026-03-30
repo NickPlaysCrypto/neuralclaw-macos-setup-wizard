@@ -123,6 +123,14 @@ class SetupState: ObservableObject {
         }
     }
 
+    /// User tapped "I've never used AI" — send them to provider selection to get started
+    func chooseNewUserPath() {
+        wizardPath = .apiKey
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            currentPage = .apiProvider
+        }
+    }
+
     /// User tapped "Continue" on the first page with services selected
     func chooseConsumerPath() {
         wizardPath = .consumer

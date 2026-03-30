@@ -195,25 +195,52 @@ struct AIUsageStep: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
-                // "I have an API key" link
-                Button(action: state.chooseAPIKeyPath) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "key.fill")
-                            .font(.system(size: 12))
-                        Text("I have an API key")
-                            .font(.system(size: 13, weight: .medium))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 9, weight: .bold))
+                // Bottom option buttons
+                HStack(spacing: 10) {
+                    Button(action: state.chooseAPIKeyPath) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "key.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(DS.accent)
+                            Text("I have an API key")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(DS.text)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(DS.accent.opacity(0.3), lineWidth: 1)
+                                )
+                        )
                     }
-                    .foregroundColor(DS.textMuted)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 20)
-                    .background(
-                        Capsule()
-                            .stroke(DS.border, lineWidth: 1)
-                    )
+                    .buttonStyle(.plain)
+
+                    Button(action: state.chooseNewUserPath) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "person.badge.plus")
+                                .font(.system(size: 14))
+                                .foregroundColor(DS.accent2)
+                            Text("I've never used AI")
+                                .font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(DS.text)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(DS.accent2.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 20)
