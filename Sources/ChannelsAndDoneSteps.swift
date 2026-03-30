@@ -79,7 +79,6 @@ struct ChannelRow: View {
 struct DoneStep: View {
     @EnvironmentObject var state: SetupState
     @State private var checkScale: CGFloat = 0
-    @State private var agentLaunched = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -133,18 +132,7 @@ struct DoneStep: View {
                     .foregroundColor(DS.textMuted)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
-                    .padding(.bottom, 8)
-
-                if agentLaunched {
-                    HStack(spacing: 6) {
-                        Image(systemName: "menubar.arrow.up.rectangle")
-                            .font(.system(size: 12))
-                        Text("NeuralClaw is running in your menu bar")
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(DS.accent.opacity(0.7))
                     .padding(.bottom, 24)
-                }
 
                 // Summary cards
                 HStack(spacing: 12) {
@@ -183,52 +171,16 @@ struct DoneStep: View {
             Spacer()
         }
         .onAppear {
-            // Save config and launch agent
+            // Save config
             state.saveConfiguration()
 
             withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.3)) {
                 checkScale = 1.0
             }
-
-            // Launch the NeuralClaw agent after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                launchAgent()
-            }
         }
         .onDisappear {
             checkScale = 0
         }
-    }
-
-    private func launchAgent() {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-
-        // Try to launch the NeuralClaw agent from common locations
-        let possiblePaths = [
-            home.appendingPathComponent("Desktop/NeuralClaw.app"),
-            home.appendingPathComponent("Applications/NeuralClaw.app"),
-            URL(fileURLWithPath: "/Applications/NeuralClaw.app"),
-        ]
-
-        for appURL in possiblePaths {
-            if FileManager.default.fileExists(atPath: appURL.path) {
-                let config = NSWorkspace.OpenConfiguration()
-                config.activates = false // Don't steal focus from wizard
-                NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, error in
-                    DispatchQueue.main.async {
-                        agentLaunched = (error == nil)
-                    }
-                }
-                return
-            }
-        }
-
-        // Fallback: try to find via 'open' command
-        let task = Process()
-        task.launchPath = "/usr/bin/open"
-        task.arguments = ["-a", "NeuralClaw"]
-        try? task.run()
-        agentLaunched = true
     }
 }
 
