@@ -113,3 +113,49 @@ Checks for Swift, builds release binary, creates `~/Desktop/NeuralClawSetup.app`
 - Break complex SwiftUI views into computed properties to avoid compiler type-check timeouts
 - **NEVER use `sips`** — it hangs/times out on this system. Use Python + Pillow for image conversion instead
 - Build scripts are portable — use `$HOME` and `$(dirname "$0")`, never hardcode `/Users/nick`
+
+## Before You Write Any Code
+
+Every time. No exceptions.
+
+1. **Grep first.** Search for existing patterns before creating anything. If a convention exists, follow it. `grep -r "similar_term" Sources/` before writing a single line.
+
+2. **Blast radius.** What depends on what you're changing? Check imports, views, consumers. Unknown blast radius = not ready to code.
+
+3. **Ask, don't assume.** Ambiguous request? Ask ONE clarifying question. Don't guess, don't ask five questions. One, then move.
+
+4. **Smallest change.** Solve what was asked. No bonus refactors. No unrequested features. Scope creep is a bug.
+
+5. **Verification plan.** How will you prove this works? Answer this before writing code.
+
+## Completion Criteria
+
+ALL must pass before any task is done:
+1. `swift build` — zero errors
+2. No warnings treated as errors
+3. No orphan TODO/FIXME without tracking issue
+4. New modules have corresponding test coverage
+
+## Self-Evolution Protocol
+
+You are an evolving system. During every session:
+
+1. **Observe.** When you discover a non-obvious pattern, constraint, or convention in the codebase that isn't documented here, log it to `.claude/memory/observations.jsonl`.
+
+2. **Learn from corrections.** When the user corrects you, log the correction to `.claude/memory/corrections.jsonl`. This is your most valuable signal.
+
+3. **Consult memory.** At the start of complex tasks, read `.claude/memory/learned-rules.md` for patterns accumulated from past sessions. These are rules that graduated from observations.
+
+4. **Never forget a mistake twice.** If a correction matches a previous correction in the log, it should already be a learned rule. If it isn't, promote it immediately.
+
+Read `.claude/memory/README.md` for the full memory system protocol.
+
+## Things You Must Never Do
+
+- Commit to main directly
+- Read or modify .env or secret files
+- Run destructive commands (rm -rf, git reset --hard, git push --force) without confirmation
+- Create .xcodeproj or .xcworkspace files (SPM only)
+- Leave dead code
+- Swallow errors silently
+- Modify `.claude/memory/learned-rules.md` without running /evolve

@@ -182,17 +182,36 @@ struct ConsumerAICard: View {
     }
 }
 
-// MARK: - OAuth Info Step (Consumer Path)
+// MARK: - Intelligence Provider Step (Consumer Path)
 
 struct OAuthInfoStep: View {
     @EnvironmentObject var state: SetupState
+    @State private var localModelHovered = false
+
+    // Volatile content: title and subtitle can be updated externally
+    private var panelTitle: String {
+        ContentRegistry.shared.getString(
+            "wizard.providerPanel.title",
+            default: "Select Your Intelligence Provider"
+        )
+    }
+
+    private var panelSubtitle: String {
+        ContentRegistry.shared.getString(
+            "wizard.providerPanel.subtitle",
+            default: "Choose one or more of these AI providers that will form the basis of your system's intelligence"
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            stepIcon("link")
-            stepTitle("Connect Your Accounts")
-            stepDesc("Here's how NeuralClaw can connect with the services you use. Log in to authorize NeuralClaw to work on your behalf.")
+            stepIcon("brain")
+            stepTitle(panelTitle)
+            stepDesc(panelSubtitle)
 
+            // Provider list — this frame is a volatile content object.
+            // The providers shown, their order, and their OAuth status
+            // are all managed by the VolatileContent registry.
             VStack(spacing: 10) {
                 ForEach(ConsumerAI.allCases) { service in
                     let isSelected = state.selectedServices.contains(service)
@@ -200,6 +219,9 @@ struct OAuthInfoStep: View {
                         OAuthServiceRow(service: service)
                     }
                 }
+
+                // Local models option
+                localModelRow
 
                 // If nothing is selected (shouldn't happen, but safety)
                 if state.selectedServices.isEmpty {
@@ -239,6 +261,77 @@ struct OAuthInfoStep: View {
         }
         .padding(.horizontal, 40)
         .padding(.top, 32)
+    }
+
+    // MARK: - Local Model Row
+
+    private var localModelRow: some View {
+        let isSelected = state.wantsLocalModel
+
+        return Button(action: { state.wantsLocalModel.toggle() }) {
+            HStack(spacing: 14) {
+                // Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.55, green: 0.35, blue: 0.85).opacity(0.15),
+                                    Color(red: 0.35, green: 0.75, blue: 0.85).opacity(0.15)
+                                ],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "desktopcomputer")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color(red: 0.55, green: 0.35, blue: 0.85))
+                }
+
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Local Models")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(DS.text)
+
+                    Text("Run models on your own hardware via Ollama")
+                        .font(.system(size: 12))
+                        .foregroundColor(DS.textMuted)
+                }
+
+                Spacer()
+
+                // Checkbox
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isSelected ? DS.accent : Color.clear)
+                        .frame(width: 22, height: 22)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(isSelected ? DS.accent : DS.border, lineWidth: 1.5)
+                        )
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(localModelHovered ? DS.surfaceHover : Color.black.opacity(0.15))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(isSelected ? DS.accent.opacity(0.4) : DS.border, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { localModelHovered = $0 }
     }
 }
 

@@ -1,2 +1,8 @@
 .build/
 .swiftpm/
+
+# claude evolution engine (session-specific data)
+.claude/memory/observations.jsonl
+.claude/memory/corrections.jsonl
+.claude/memory/violations.jsonl
+.claude/memory/sessions.jsonl

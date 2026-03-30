@@ -623,6 +623,30 @@
       "conditionals": null,
       "affects": null,
       "feedQuality": "disconnected"
+    },
+    "wizard.providerPanel.title": {
+      "key": "wizard.providerPanel.title",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "Select Your Intelligence Provider",
+      "verify": null,
+      "conditionals": null,
+      "affects": null,
+      "feedQuality": "disconnected"
+    },
+    "wizard.providerPanel.subtitle": {
+      "key": "wizard.providerPanel.subtitle",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "Choose one or more of these AI providers that will form the basis of your system's intelligence",
+      "verify": null,
+      "conditionals": null,
+      "affects": null,
+      "feedQuality": "disconnected"
     }
   }
 }
