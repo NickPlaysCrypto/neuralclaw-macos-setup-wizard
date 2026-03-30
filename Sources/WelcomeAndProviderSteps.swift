@@ -602,13 +602,14 @@ struct OAuthInfoStep: View {
                     state.directAPIKey = directAPIKey
                     apiKeySaved = true
                     showDetection = true
-                    // Start simulated auto-detection
-                    // TODO: Replace with real API provider detection logic
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        // Simulated: detection completes (or times out)
-                        // In production, this would be triggered by a real signal
-                        // detectedProvider = "OpenAI"
-                        // showDetection = false
+                    // Auto-detection timeout — 10 seconds
+                    // TODO: Replace with real API provider detection logic.
+                    // If real detection succeeds before timeout, set detectedProvider and it auto-closes.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                        // Only timeout if still detecting (no provider found, not manually picking)
+                        if showDetection && detectedProvider == nil && !showManualPicker {
+                            showManualPicker = true
+                        }
                     }
                 }) {
                     HStack(spacing: 4) {
