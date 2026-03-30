@@ -11,6 +11,11 @@ import Foundation
 //   support conditional associations so one value change cascades to all
 //   related UI elements.
 //
+// SCOPE:
+//   This is DEVELOPER/AGENT INFRASTRUCTURE, not user-facing. End users never
+//   see urgency scores, feed quality, or happiness metrics. This exists so
+//   developers and AI agents can maintain content accuracy over time.
+//
 // ARCHITECTURE:
 //   ┌───────────────────────────────────────────────────────────────────────┐
 //   │  UI Layer (SwiftUI views)                                           │

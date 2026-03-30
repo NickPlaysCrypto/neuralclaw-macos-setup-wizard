@@ -4,6 +4,11 @@
 > updated without rebuilding the app. Every piece of text, URL, list, or status that might
 > go stale is wrapped in this system.
 
+> **This is developer/agent infrastructure.** End users never interact with urgency scores,
+> feed quality, happiness metrics, or verification queues. They just see a working wizard.
+> This system exists so that developers and AI agents can systematically track content
+> freshness, find better data sources, and keep the app accurate over time.
+
 ## Quick Start
 
 ### Reading volatile content in Swift

@@ -17,6 +17,8 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 
 ## VolatileContent System (v2)
 
+> **Note:** VolatileContent is **developer/agent infrastructure**, not user-facing. End users never see urgency scores, feed quality, or happiness metrics — they just see a wizard that works. This system exists so developers and AI agents can track, maintain, and upgrade the accuracy of UI content over time.
+
 Content that changes over time is managed by `ContentRegistry` — an intelligent system that tracks freshness, carries verification instructions, and resolves conditional UI associations.
 
 ### Core Types
