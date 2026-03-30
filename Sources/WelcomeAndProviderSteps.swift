@@ -503,11 +503,40 @@ struct OAuthServiceRow: View {
 
 struct APIKeyGuideStep: View {
     @EnvironmentObject var state: SetupState
+    @State private var showAPIInfo = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             stepIcon("key.viewfinder")
-            stepTitle("Get Your API Key")
+
+            // Title with info button
+            HStack(alignment: .center, spacing: 8) {
+                stepTitle("Get Your API Key")
+
+                Button(action: { showAPIInfo.toggle() }) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(DS.textDim)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showAPIInfo, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What is an API Key?")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text("An Application-Program Interface (API) key is a long password-like object that allows you to send and receive data between two apps. It is what allows your AI agent to have a raw data stream between the agent and an AI provider company like Google/OpenAI etc...")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.8))
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .frame(width: 300)
+                    .background(Color(red: 0.12, green: 0.13, blue: 0.18))
+                }
+            }
+
             stepDesc("Follow these steps to create an API key for your provider, then paste it below.")
 
             ScrollView {
