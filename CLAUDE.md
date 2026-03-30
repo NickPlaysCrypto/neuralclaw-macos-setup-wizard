@@ -71,12 +71,16 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 | Model list | `{provider}.models` | modelList | 7 days |
 | Description | `{provider}.desc` | label | 60 days |
 | Key placeholder | `{provider}.keyPlaceholder` | label | 90 days |
+| Panel title | `wizard.providerPanel.title` | label | 90 days |
+| Panel subtitle | `wizard.providerPanel.subtitle` | label | 90 days |
 
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
+- Provider panel titled "Select Your Intelligence Provider" — title/subtitle are volatile content objects
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
 - `OAuthAvailability.from(_:)` converts string values from the registry to the enum
 - `ConsumerAI.oauthSubtitle`, `.oauthButtonEnabled`, `.oauthBadge` resolve from conditionals
+- **Local Models** option: checkbox toggle for Ollama support (`SetupState.wantsLocalModel`)
 - Page sequence is dynamic based on chosen path
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
