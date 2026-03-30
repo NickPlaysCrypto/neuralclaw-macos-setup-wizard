@@ -77,7 +77,7 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 ## Build & Run
 ```bash
 pkill -f NeuralClawSetup 2>/dev/null; sleep 0.5
-cd /Users/nick/Desktop/NeuralClawSetup && swift run
+swift run
 ```
 
 ## Building .app Bundle
@@ -85,9 +85,16 @@ cd /Users/nick/Desktop/NeuralClawSetup && swift run
 bash build_app.sh
 ```
 
+## First-Time Install (after cloning)
+```bash
+bash install.sh
+```
+Checks for Swift, builds release binary, creates `~/Desktop/NeuralClawSetup.app`, and launches it.
+
 ## App Icon
-- Source: `Sources/Resources/AppIcon.icns`
+- Source: `Sources/Resources/AppIcon.icns` (glowing brain + wizard hat, dark bg, no white border)
 - Loaded via `Bundle.module`, set via `NSApp.applicationIconImage`
+- To regenerate: create PNG, convert to .icns using Python + Pillow (see below)
 
 ## Important Notes
 - Uses SPM, NOT an Xcode project
@@ -95,3 +102,5 @@ bash build_app.sh
 - Window is fixed size 720x620 with hidden title bar
 - `ContentRegistry` is NOT `@MainActor` — must be accessible from nonisolated enum properties
 - Break complex SwiftUI views into computed properties to avoid compiler type-check timeouts
+- **NEVER use `sips`** — it hangs/times out on this system. Use Python + Pillow for image conversion instead
+- Build scripts are portable — use `$HOME` and `$(dirname "$0")`, never hardcode `/Users/nick`
