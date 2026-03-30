@@ -1,5 +1,52 @@
 import SwiftUI
 
+// MARK: - Reusable Info Popover
+
+struct InfoPopoverButton: View {
+    let title: String
+    let message: String
+    var warningIcon: Bool = false
+    var arrowEdge: Edge = .bottom
+
+    @State private var isShowing = false
+
+    var body: some View {
+        Button(action: { isShowing.toggle() }) {
+            Image(systemName: "questionmark.circle.fill")
+                .font(.system(size: 15))
+                .foregroundColor(DS.textDim)
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isShowing, arrowEdge: arrowEdge) {
+            VStack(alignment: .leading, spacing: 6) {
+                if warningIcon {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.orange)
+                        Text(title)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                } else {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+
+                Text(message)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.8))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .frame(width: 280)
+            .background(Color(red: 0.12, green: 0.13, blue: 0.18))
+        }
+    }
+}
+
 // MARK: - Step 0: AI Usage Questionnaire
 
 struct AIUsageStep: View {
@@ -8,7 +55,6 @@ struct AIUsageStep: View {
     @State private var cardsOffset: CGFloat = 20
     @State private var showProviderSearch = false
     @State private var searchText = ""
-    @State private var showNewUserInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -243,29 +289,11 @@ struct AIUsageStep: View {
                         }
                         .buttonStyle(.plain)
 
-                        Button(action: { showNewUserInfo.toggle() }) {
-                            Image(systemName: "questionmark.circle.fill")
-                                .font(.system(size: 15))
-                                .foregroundColor(DS.textDim)
-                        }
-                        .buttonStyle(.plain)
+                        InfoPopoverButton(
+                            title: "New to AI?",
+                            message: "Choose this option if you have no AI subscriptions, or have never used AI. NeuralClaw will provide your AI intelligence using basic models at no cost."
+                        )
                         .offset(x: 6, y: -6)
-                        .popover(isPresented: $showNewUserInfo, arrowEdge: .bottom) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("New to AI?")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.white)
-
-                                Text("Choose this option if you have no AI subscriptions, or have never used AI. NeuralClaw will provide your AI intelligence using basic models at no cost.")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .lineSpacing(2)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(14)
-                            .frame(width: 280)
-                            .background(Color(red: 0.12, green: 0.13, blue: 0.18))
-                        }
                     }
                 }
             }
@@ -586,28 +614,11 @@ struct OAuthInfoStep: View {
                 }
                 .buttonStyle(.plain)
 
-                Button(action: { showLearnInfo.toggle() }) {
-                    Image(systemName: "questionmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(DS.textDim)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showLearnInfo, arrowEdge: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("When do I need an API key?")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Text("If none of the providers you use offer Log In (OAuth) then you may be able to get an API key from them. Click to find out how.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.8))
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(14)
-                    .frame(width: 280)
-                    .background(Color(red: 0.12, green: 0.13, blue: 0.18))
-                }
+                InfoPopoverButton(
+                    title: "When do I need an API key?",
+                    message: "If none of the providers you use offer Log In (OAuth) then you may be able to get an API key from them. Click to find out how.",
+                    arrowEdge: .top
+                )
             }
         }
         .padding(.horizontal, 40)
@@ -1190,30 +1201,11 @@ struct OAuthServiceRow: View {
                             )
                     )
 
-                Button(action: { showPopover.toggle() }) {
-                    Image(systemName: "questionmark.circle")
-                        .font(.system(size: 15))
-                        .foregroundColor(DS.textDim)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 12))
-                                .foregroundColor(.orange)
-                            Text("Not Available")
-                                .font(.system(size: 13, weight: .semibold))
-                        }
-                        Text("Log In is not available with this provider, however you may be able to get an API key from them.")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(14)
-                    .frame(width: 260)
-                }
+                InfoPopoverButton(
+                    title: "Not Available",
+                    message: "Log In is not available with this provider, however you may be able to get an API key from them.",
+                    warningIcon: true
+                )
             }
         }
     }
@@ -1237,28 +1229,10 @@ struct APIKeyGuideStep: View {
             HStack(alignment: .center, spacing: 8) {
                 stepTitle("Get Your API Key")
 
-                Button(action: { showAPIInfo.toggle() }) {
-                    Image(systemName: "questionmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(DS.textDim)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showAPIInfo, arrowEdge: .bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("What is an API Key?")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Text("An Application-Program Interface (API) key is a long password-like object that allows you to send and receive data between two apps. It is what allows your AI agent to have a raw data stream between the agent and an AI provider company like Google/OpenAI etc...")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.8))
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(14)
-                    .frame(width: 300)
-                    .background(Color(red: 0.12, green: 0.13, blue: 0.18))
-                }
+                InfoPopoverButton(
+                    title: "What is an API Key?",
+                    message: "An Application-Program Interface (API) key is a long password-like object that allows you to send and receive data between two apps. It is what allows your AI agent to have a raw data stream between the agent and an AI provider company like Google/OpenAI etc..."
+                )
             }
 
             stepDesc("Follow these steps to create an API key for your provider, then paste it below.")
