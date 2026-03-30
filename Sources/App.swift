@@ -7,7 +7,7 @@ struct NeuralClawSetupApp: App {
     var body: some Scene {
         WindowGroup {
             SetupWizardView()
-                .frame(width: 720, height: 620)
+                .frame(width: 720, height: 700)
                 .fixedSize()
         }
         .windowStyle(.hiddenTitleBar)

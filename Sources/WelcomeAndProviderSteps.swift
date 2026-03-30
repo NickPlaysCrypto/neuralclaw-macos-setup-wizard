@@ -9,7 +9,7 @@ struct AIUsageStep: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer().frame(height: 36)
+            Spacer().frame(height: 20)
 
             // Header
             VStack(spacing: 8) {
@@ -30,7 +30,7 @@ struct AIUsageStep: View {
                     .multilineTextAlignment(.center)
             }
             .opacity(headerOpacity)
-            .padding(.bottom, 28)
+            .padding(.bottom, 18)
 
             // Service cards — grid layout (3+2)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3), spacing: 14) {
@@ -183,7 +183,7 @@ struct ConsumerAICard: View {
 
     var body: some View {
         Button(action: onToggle) {
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 // Logo icon
                 ZStack {
                     Circle()
@@ -193,20 +193,20 @@ struct ConsumerAICard: View {
                                 startPoint: .topLeading, endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 56, height: 56)
+                        .frame(width: 44, height: 44)
                         .overlay(
                             Circle()
                                 .stroke(service.iconColor.opacity(isSelected ? 0.5 : 0.15), lineWidth: 1.5)
                         )
 
                     Image(systemName: service.icon)
-                        .font(.system(size: 24))
+                        .font(.system(size: 20))
                         .foregroundColor(service.iconColor)
                 }
 
                 // Product name
                 Text(service.productName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DS.text)
 
                 // Company name
@@ -233,7 +233,7 @@ struct ConsumerAICard: View {
                 }
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
             }
-            .padding(.vertical, 20)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 16)
