@@ -97,6 +97,7 @@ Checks for Swift, builds release binary, creates `~/Desktop/NeuralClawSetup.app`
 - To regenerate: create PNG, convert to .icns using Python + Pillow (see below)
 
 ## Important Notes
+- **Always use Xcode** for building, testing, and managing Swift projects — use the Xcode workflows in `clawnick-main/.agents/workflows/` (`/xcode-build`, `/xcode-test`, `/xcode-diagnostics`, `/xcode-project`, `/xcode-ide`)
 - Uses SPM, NOT an Xcode project
 - Minimum macOS 13 / Swift tools 5.9
 - Window is fixed size 720x620 with hidden title bar
