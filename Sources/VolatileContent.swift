@@ -609,3 +609,144 @@ final class ContentRegistry {
 // MARK: - CaseIterable for ContentUrgency (needed for freshnessSummary)
 
 extension ContentUrgency: CaseIterable {}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MARK: - MetaTag System
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// Agents annotate volatile entries with timestamped markdown comments.
+// Meta-tags are stored separately in ~/.neuralclaw/meta_tags.json
+// as an append-only log. They do NOT ship with the app — they're
+// agent-generated context that helps other agents understand the
+// history and current state of volatile content.
+//
+// Usage:
+//   MetaTagStore.shared.add(
+//       key: "openai.oauthStatus",
+//       agent: "antigravity",
+//       type: .observation,
+//       content: "Checked platform.openai.com — no OAuth docs yet."
+//   )
+//
+//   let history = MetaTagStore.shared.tags(for: "openai.oauthStatus")
+//   let latest = MetaTagStore.shared.latestTag(for: "openai.oauthStatus")
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/// A timestamped annotation attached to a volatile content entry.
+/// Agents write these to record observations, corrections, warnings,
+/// or discoveries about a piece of volatile content.
+struct MetaTag: Codable {
+    let key: String              // Which volatile entry this annotates
+    let timestamp: String        // ISO 8601 — when the tag was written
+    let agent: String            // Who wrote it: "antigravity", "cron", "human", etc.
+    let type: MetaTagType        // What kind of annotation
+    let content: String          // Markdown content — the actual note
+
+    var date: Date? {
+        ISO8601DateFormatter().date(from: timestamp)
+    }
+}
+
+/// What kind of meta-tag this is. Helps agents prioritize what to read.
+enum MetaTagType: String, Codable {
+    case observation     // "I checked and noticed..."  — neutral finding
+    case correction      // "Value was wrong, updated to..."  — fix applied
+    case sourceFound     // "Found a better data source: ..."  — feed upgrade
+    case sourceDown      // "Data source is no longer working"  — feed degraded
+    case warning         // "This may break soon because..."  — heads up
+    case context         // "Background info: ..."  — general context
+}
+
+/// Persistent store for meta-tags. Append-only log in ~/.neuralclaw/meta_tags.json.
+/// Separate from the volatile content registry — meta-tags are agent-generated
+/// annotations, not content data.
+final class MetaTagStore {
+    static let shared = MetaTagStore()
+
+    private(set) var tags: [MetaTag] = []
+
+    private let storeURL: URL = {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return home.appendingPathComponent(".neuralclaw/meta_tags.json")
+    }()
+
+    init() {
+        load()
+    }
+
+    // MARK: - Write
+
+    /// Add a new meta-tag to a volatile entry.
+    /// The tag is immediately persisted to disk.
+    func add(key: String, agent: String, type: MetaTagType, content: String) {
+        let tag = MetaTag(
+            key: key,
+            timestamp: ISO8601DateFormatter().string(from: Date()),
+            agent: agent,
+            type: type,
+            content: content
+        )
+        tags.append(tag)
+        save()
+    }
+
+    // MARK: - Read
+
+    /// All tags for a specific volatile entry, oldest first
+    func tags(for key: String) -> [MetaTag] {
+        tags.filter { $0.key == key }
+    }
+
+    /// Most recent tag for a specific entry
+    func latestTag(for key: String) -> MetaTag? {
+        tags(for: key).last
+    }
+
+    /// All tags of a specific type across all entries
+    func tags(ofType type: MetaTagType) -> [MetaTag] {
+        tags.filter { $0.type == type }
+    }
+
+    /// All tags written by a specific agent
+    func tags(by agent: String) -> [MetaTag] {
+        tags.filter { $0.agent == agent }
+    }
+
+    /// Keys that have any meta-tags
+    var annotatedKeys: Set<String> {
+        Set(tags.map(\.key))
+    }
+
+    /// Number of tags per key, sorted by most-annotated first
+    var tagCounts: [(key: String, count: Int)] {
+        let grouped = Dictionary(grouping: tags, by: \.key)
+        return grouped.map { (key: $0.key, count: $0.value.count) }
+            .sorted { $0.count > $1.count }
+    }
+
+    /// Summary for diagnostics
+    var summary: String {
+        let total = tags.count
+        let keys = annotatedKeys.count
+        let agents = Set(tags.map(\.agent)).count
+        return "\(total) tags across \(keys) entries from \(agents) agent(s)"
+    }
+
+    // MARK: - Persistence
+
+    private func load() {
+        guard FileManager.default.fileExists(atPath: storeURL.path),
+              let data = try? Data(contentsOf: storeURL),
+              let loaded = try? JSONDecoder().decode([MetaTag].self, from: data) else {
+            return
+        }
+        tags = loaded
+    }
+
+    private func save() {
+        guard let data = try? JSONEncoder().encode(tags) else { return }
+        let dir = storeURL.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? data.write(to: storeURL)
+    }
+}

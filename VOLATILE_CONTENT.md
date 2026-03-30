@@ -316,9 +316,10 @@ For non-provider content, use: `{component}.{property}`
 
 | File | Purpose |
 |---|---|
-| `Sources/VolatileContent.swift` | Core types: VolatileEntry, ContentUrgency, VerifyInstructions, ContentRegistry |
+| `Sources/VolatileContent.swift` | Core types: VolatileEntry, ContentUrgency, FeedQuality, MetaTag, ContentRegistry, MetaTagStore |
 | `Sources/Resources/volatile_defaults.json` | Bundled defaults (shipped with app) |
 | `~/.neuralclaw/volatile_content.json` | Local cache (overrides bundled defaults) |
+| `~/.neuralclaw/meta_tags.json` | Agent-generated annotations (append-only, NOT shipped) |
 | `Sources/Models.swift` | Enum properties that consume volatile content |
 
 ---
@@ -344,3 +345,47 @@ For non-provider content, use: `{component}.{property}`
 | `local.models` | modelList | 14 days | 🥈 Structured | ✅ (checkURL) | ❌ |
 | `{provider}.desc` | label | 60 days | 💀 Disconnected | ❌ | ❌ |
 | `{provider}.keyPlaceholder` | label | 90 days | 💀 Disconnected | ❌ | ❌ |
+
+---
+
+## Meta-Tags (Agent Annotations)
+
+Agents can attach timestamped markdown notes to any volatile entry. Meta-tags are
+an **append-only log** stored separately in `~/.neuralclaw/meta_tags.json` — they
+do NOT ship with the app.
+
+### Writing a meta-tag
+```swift
+MetaTagStore.shared.add(
+    key: "openai.oauthStatus",
+    agent: "antigravity",
+    type: .observation,
+    content: "Checked platform.openai.com/docs/guides/authentication — no OAuth docs yet. Only API key auth documented."
+)
+```
+
+### Reading meta-tags
+```swift
+let history = MetaTagStore.shared.tags(for: "openai.oauthStatus")   // all tags, oldest first
+let latest = MetaTagStore.shared.latestTag(for: "openai.oauthStatus") // most recent
+let fixes = MetaTagStore.shared.tags(ofType: .correction)            // all corrections
+let mine = MetaTagStore.shared.tags(by: "antigravity")               // all by one agent
+let diag = MetaTagStore.shared.summary                               // "12 tags across 5 entries from 2 agent(s)"
+```
+
+### Tag Types
+
+| Type | When to use | Example |
+|---|---|---|
+| `observation` | Neutral finding from a check | "Checked the page, no changes found" |
+| `correction` | Fixed a wrong value | "Model list was outdated, updated to include gpt-5.4" |
+| `sourceFound` | Discovered a better data source | "Found public API endpoint: /api/v1/models" |
+| `sourceDown` | Data source stopped working | "URL returns 404 as of today" |
+| `warning` | Something may break soon | "Google announced API key page redesign in Q2" |
+| `context` | General background info | "Anthropic has stated OAuth is against their TOS" |
+
+### Storage
+- File: `~/.neuralclaw/meta_tags.json`
+- Format: flat JSON array of `MetaTag` objects
+- Lifecycle: append-only, separate from volatile content
+- NOT bundled with the app — purely agent-generated
