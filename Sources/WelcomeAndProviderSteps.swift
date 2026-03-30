@@ -589,7 +589,7 @@ struct OAuthInfoStep: View {
             Spacer(minLength: 8)
 
             // Bottom hint link with info
-            HStack(spacing: 8) {
+            ZStack(alignment: .trailing) {
                 Button(action: state.goNext) {
                     HStack(spacing: 6) {
                         Image(systemName: "key.fill")
@@ -602,6 +602,7 @@ struct OAuthInfoStep: View {
                     .foregroundColor(DS.accent)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 16)
+                    .padding(.trailing, 24) // extra space for the ? icon
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
@@ -619,6 +620,7 @@ struct OAuthInfoStep: View {
                     message: "If none of the providers you use offer Log In (OAuth) then you may be able to get an API key from them. Click to find out how.",
                     arrowEdge: .top
                 )
+                .padding(.trailing, 10)
             }
         }
         .padding(.horizontal, 40)
@@ -1225,10 +1227,12 @@ struct APIKeyGuideStep: View {
         VStack(alignment: .leading, spacing: 0) {
             stepIcon("key.viewfinder")
 
-            // Title with info button
-            HStack(alignment: .center, spacing: 8) {
-                stepTitle("Get Your API Key")
-
+            // Title with info button — ? is inside the title row
+            ZStack(alignment: .trailing) {
+                HStack(alignment: .center, spacing: 8) {
+                    stepTitle("Get Your API Key")
+                    Spacer()
+                }
                 InfoPopoverButton(
                     title: "What is an API Key?",
                     message: "An Application-Program Interface (API) key is a long password-like object that allows you to send and receive data between two apps. It is what allows your AI agent to have a raw data stream between the agent and an AI provider company like Google/OpenAI etc..."
