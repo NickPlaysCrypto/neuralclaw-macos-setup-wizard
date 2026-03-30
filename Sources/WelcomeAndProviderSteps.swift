@@ -194,6 +194,8 @@ struct OAuthInfoStep: View {
     @State private var showDetection = false
     @State private var detectedProvider: String? = nil
     @State private var showManualPicker = false
+    @State private var detectionProgress: Double = 0.0
+    @State private var clickedNo = false
 
     // Volatile content: title and subtitle can be updated externally
     private var panelTitle: String {
@@ -386,63 +388,100 @@ struct OAuthInfoStep: View {
                             }
                             .padding(24)
                         } else {
-                            // Detecting state — spinner + question
+                            // Detecting state — progress bar + question
                             VStack(spacing: 16) {
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                    .tint(DS.accent)
+                                // 10-second progress bar
+                                VStack(spacing: 6) {
+                                    GeometryReader { geo in
+                                        ZStack(alignment: .leading) {
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(Color.white.opacity(0.08))
+                                                .frame(height: 6)
 
-                                Text("Attempting to determine API provider")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(DS.text)
-                                    .multilineTextAlignment(.center)
-
-                                Divider()
-                                    .background(DS.border)
-                                    .padding(.horizontal, 8)
-
-                                Text("Do you know which AI provider this key is from?")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(DS.textMuted)
-                                    .multilineTextAlignment(.center)
-
-                                HStack(spacing: 12) {
-                                    Button(action: {
-                                        showManualPicker = true
-                                    }) {
-                                        Text("Yes")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 24)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(DS.accent)
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    Button(action: {
-                                        // Stay on detecting — wait for auto-detection
-                                    }) {
-                                        Text("No")
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(DS.textMuted)
-                                            .padding(.horizontal, 24)
-                                            .padding(.vertical, 8)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color.white.opacity(0.06))
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 8)
-                                                            .stroke(DS.border, lineWidth: 1)
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [DS.accent, Color(red: 0.55, green: 0.35, blue: 0.85)],
+                                                        startPoint: .leading, endPoint: .trailing
                                                     )
-                                            )
+                                                )
+                                                .frame(width: geo.size.width * detectionProgress, height: 6)
+                                        }
                                     }
-                                    .buttonStyle(.plain)
+                                    .frame(height: 6)
+                                }
+
+                                if clickedNo {
+                                    // User clicked No — show scanning message
+                                    Text("Please wait while we scan for possible providers")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(DS.text)
+                                        .multilineTextAlignment(.center)
+
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .tint(DS.textMuted)
+                                } else {
+                                    // Initial state — asking the question
+                                    Text("Attempting to determine API provider")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(DS.text)
+                                        .multilineTextAlignment(.center)
+
+                                    Divider()
+                                        .background(DS.border)
+                                        .padding(.horizontal, 8)
+
+                                    Text("Do you know which AI provider this key is from?")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(DS.textMuted)
+                                        .multilineTextAlignment(.center)
+
+                                    HStack(spacing: 12) {
+                                        Button(action: {
+                                            showManualPicker = true
+                                        }) {
+                                            Text("Yes")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 24)
+                                                .padding(.vertical, 8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(DS.accent)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+
+                                        Button(action: {
+                                            clickedNo = true
+                                        }) {
+                                            Text("No")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(DS.textMuted)
+                                                .padding(.horizontal, 24)
+                                                .padding(.vertical, 8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.white.opacity(0.06))
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 8)
+                                                                .stroke(DS.border, lineWidth: 1)
+                                                        )
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
                             }
                             .padding(28)
+                            .onAppear {
+                                detectionProgress = 0.0
+                                clickedNo = false
+                                withAnimation(.linear(duration: 10)) {
+                                    detectionProgress = 1.0
+                                }
+                            }
                         }
                     }
                     .frame(width: 320)
