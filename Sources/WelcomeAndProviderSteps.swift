@@ -47,6 +47,216 @@ struct InfoPopoverButton: View {
     }
 }
 
+// MARK: - Reusable Provider Search Overlay (volatile content class)
+
+/// Standardized provider search overlay used across the installation wizard.
+/// Shows the full ExtraProvider list with search, and optionally includes
+/// the 5 main ConsumerAI providers at the top when `includeMainProviders` is true.
+struct ProviderSearchOverlay: View {
+    @EnvironmentObject var state: SetupState
+    @Binding var isPresented: Bool
+    var includeMainProviders: Bool = false
+    var onProviderSelected: ((String) -> Void)? = nil
+
+    @State private var searchText = ""
+
+    private var filteredExtras: [ExtraProvider] {
+        if searchText.isEmpty { return ExtraProvider.all }
+        return ExtraProvider.all.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.company.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    private var filteredMain: [ConsumerAI] {
+        if searchText.isEmpty { return ConsumerAI.allCases }
+        return ConsumerAI.allCases.filter {
+            $0.productName.localizedCaseInsensitiveContains(searchText) ||
+            $0.companyName.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.6).ignoresSafeArea()
+                .onTapGesture { isPresented = false }
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(includeMainProviders ? "Select Your Provider" : "Add a Provider")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(DS.text)
+                        Text(includeMainProviders
+                             ? "Choose the provider this API key belongs to"
+                             : "Search and select additional AI providers")
+                            .font(.system(size: 12))
+                            .foregroundColor(DS.textMuted)
+                    }
+
+                    Spacer()
+
+                    Button(action: { isPresented = false }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DS.textDim)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 12)
+
+                // Search field
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13))
+                        .foregroundColor(DS.textDim)
+
+                    TextField("Search providers...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14))
+                        .foregroundColor(DS.text)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.3))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(DS.border, lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+
+                Divider().background(DS.border)
+
+                // Provider list
+                ScrollView {
+                    VStack(spacing: 4) {
+                        // Main providers (shown when selecting a known provider)
+                        if includeMainProviders {
+                            ForEach(filteredMain) { service in
+                                Button(action: {
+                                    onProviderSelected?("\(service.productName) by \(service.companyName)")
+                                }) {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: service.icon)
+                                            .font(.system(size: 15))
+                                            .foregroundColor(service.iconColor)
+                                            .frame(width: 24)
+
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(service.productName)
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(DS.text)
+                                            Text(service.companyName)
+                                                .font(.system(size: 11))
+                                                .foregroundColor(DS.textMuted)
+                                        }
+
+                                        Spacer()
+
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(DS.textDim)
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.white.opacity(0.03))
+                                    )
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            if !filteredMain.isEmpty && !filteredExtras.isEmpty {
+                                Divider()
+                                    .background(DS.border)
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                            }
+                        }
+
+                        // Extra providers
+                        ForEach(filteredExtras) { provider in
+                            let isAdded = state.extraProviders.contains(provider.id)
+                            Button(action: {
+                                if let onSelected = onProviderSelected {
+                                    onSelected(provider.name)
+                                } else {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        if isAdded {
+                                            state.extraProviders.remove(provider.id)
+                                        } else {
+                                            state.extraProviders.insert(provider.id)
+                                        }
+                                    }
+                                }
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: provider.icon)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(provider.color)
+                                        .frame(width: 24)
+
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(provider.name)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(DS.text)
+                                        Text(provider.company)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(DS.textMuted)
+                                    }
+
+                                    Spacer()
+
+                                    if onProviderSelected != nil {
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(DS.textDim)
+                                    } else {
+                                        Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(isAdded ? DS.accent3 : DS.textDim)
+                                    }
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(isAdded && onProviderSelected == nil ? DS.accent3.opacity(0.06) : Color.clear)
+                                )
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                }
+                .frame(maxHeight: 340)
+            }
+            .frame(width: 380)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(DS.border, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            )
+        }
+        .transition(.opacity)
+    }
+}
+
 // MARK: - Step 0: AI Usage Questionnaire
 
 struct AIUsageStep: View {
@@ -54,7 +264,6 @@ struct AIUsageStep: View {
     @State private var headerOpacity: Double = 0
     @State private var cardsOffset: CGFloat = 20
     @State private var showProviderSearch = false
-    @State private var searchText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -309,140 +518,9 @@ struct AIUsageStep: View {
         }
         .overlay {
             if showProviderSearch {
-                providerSearchOverlay
+                ProviderSearchOverlay(isPresented: $showProviderSearch)
             }
         }
-    }
-
-    // MARK: - Provider Search Overlay
-
-    private var filteredProviders: [ExtraProvider] {
-        if searchText.isEmpty { return ExtraProvider.all }
-        return ExtraProvider.all.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText) ||
-            $0.company.localizedCaseInsensitiveContains(searchText)
-        }
-    }
-
-    private var providerSearchOverlay: some View {
-        ZStack {
-            Color.black.opacity(0.6).ignoresSafeArea()
-                .onTapGesture { showProviderSearch = false }
-
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Add a Provider")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(DS.text)
-                        Text("Search and select additional AI providers")
-                            .font(.system(size: 12))
-                            .foregroundColor(DS.textMuted)
-                    }
-
-                    Spacer()
-
-                    Button(action: { showProviderSearch = false }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(DS.textDim)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
-                .padding(.bottom, 12)
-
-                // Search field
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13))
-                        .foregroundColor(DS.textDim)
-
-                    TextField("Search providers...", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 14))
-                        .foregroundColor(DS.text)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.black.opacity(0.3))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(DS.border, lineWidth: 1)
-                        )
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-
-                Divider().background(DS.border)
-
-                // Provider list
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(filteredProviders) { provider in
-                            let isAdded = state.extraProviders.contains(provider.id)
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    if isAdded {
-                                        state.extraProviders.remove(provider.id)
-                                    } else {
-                                        state.extraProviders.insert(provider.id)
-                                    }
-                                }
-                            }) {
-                                HStack(spacing: 12) {
-                                    Image(systemName: provider.icon)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(provider.color)
-                                        .frame(width: 24)
-
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(provider.name)
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(DS.text)
-                                        Text(provider.company)
-                                            .font(.system(size: 11))
-                                            .foregroundColor(DS.textMuted)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(isAdded ? DS.accent3 : DS.textDim)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(isAdded ? DS.accent3.opacity(0.06) : Color.clear)
-                                )
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                }
-                .frame(maxHeight: 300)
-            }
-            .frame(width: 380)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(DS.border, lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
-            )
-        }
-        .transition(.opacity)
     }
 }
 
@@ -659,61 +737,16 @@ struct OAuthInfoStep: View {
                                 }
                             }
                         } else if showManualPicker {
-                            // Manual provider selection
-                            VStack(spacing: 14) {
-                                Text("Select Your Provider")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(DS.text)
-
-                                VStack(spacing: 8) {
-                                    ForEach(ConsumerAI.allCases) { service in
-                                        Button(action: {
-                                            detectedProvider = "\(service.productName) by \(service.companyName)"
-                                        }) {
-                                            HStack(spacing: 10) {
-                                                Image(systemName: service.icon)
-                                                    .font(.system(size: 14))
-                                                    .foregroundColor(service.iconColor)
-                                                    .frame(width: 24)
-
-                                                Text("\(service.productName) by \(service.companyName)")
-                                                    .font(.system(size: 13, weight: .medium))
-                                                    .foregroundColor(DS.text)
-
-                                                Spacer()
-
-                                                Image(systemName: "chevron.right")
-                                                    .font(.system(size: 10, weight: .bold))
-                                                    .foregroundColor(DS.textDim)
-                                            }
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 10)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color.white.opacity(0.04))
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 8)
-                                                            .stroke(DS.border, lineWidth: 1)
-                                                    )
-                                            )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-
-                                Button(action: {
+                            // Manual provider selection — uses standardized overlay
+                            ProviderSearchOverlay(
+                                isPresented: $showManualPicker,
+                                includeMainProviders: true,
+                                onProviderSelected: { providerName in
+                                    detectedProvider = providerName
                                     showManualPicker = false
-                                    showDetection = false
-                                    apiKeySaved = false
-                                }) {
-                                    Text("Cancel")
-                                        .font(.system(size: 12, weight: .medium))
-                                        .foregroundColor(DS.textMuted)
                                 }
-                                .buttonStyle(.plain)
-                                .padding(.top, 4)
-                            }
-                            .padding(24)
+                            )
+                            .frame(width: 380, height: 420)
                         } else if detectionFailed {
                             // Detection timed out — show error + manual option
                             VStack(spacing: 14) {
