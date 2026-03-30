@@ -1665,6 +1665,15 @@ struct APIProviderStep: View {
     @State private var showModelDetection = false
     @State private var modelDetectionProgress: Double = 0.0
     @State private var modelDetectionFailed = false
+    // Unknown provider key
+    @State private var unknownKeyInput = ""
+    @State private var unknownKeySaved = false
+    @State private var showUnknownDetection = false
+    @State private var unknownDetectionProgress: Double = 0.0
+    @State private var unknownClickedNo = false
+    @State private var unknownDetectedProvider: String? = nil
+    @State private var unknownDetectionFailed = false
+    @State private var showUnknownManualPicker = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1739,6 +1748,74 @@ struct APIProviderStep: View {
                         }
                     }
                     .padding(.top, 6)
+
+                    // Divider
+                    HStack {
+                        VStack { Divider().background(DS.border) }
+                        Text("OR")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(DS.textDim)
+                            .tracking(1)
+                        VStack { Divider().background(DS.border) }
+                    }
+                    .padding(.vertical, 8)
+
+                    // Unknown provider key input
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "questionmark.diamond")
+                                .font(.system(size: 12))
+                                .foregroundColor(DS.accent2)
+                            Text("I have a key but I don't know the provider")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(DS.textMuted)
+                        }
+
+                        HStack(spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "key.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(DS.textDim)
+
+                                SecureField("Paste your API key here...", text: $unknownKeyInput)
+                                    .font(.system(size: 13, design: .monospaced))
+                                    .textFieldStyle(.plain)
+                                    .foregroundColor(DS.text)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.black.opacity(0.25))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(unknownKeySaved ? Color.green.opacity(0.3) : DS.accent2.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+
+                            Button(action: saveUnknownKey) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: unknownKeySaved ? "checkmark.circle.fill" : "magnifyingglass")
+                                        .font(.system(size: 12))
+                                    Text(unknownKeySaved ? "Saved" : "Scan")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .foregroundColor(unknownKeySaved ? .green : (unknownKeyInput.isEmpty ? DS.textDim : DS.accent2))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 7)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.black.opacity(0.2))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(unknownKeySaved ? Color.green.opacity(0.3) : DS.accent2.opacity(0.2), lineWidth: 1)
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(unknownKeyInput.isEmpty)
+                        }
+                    }
                 }
             }
 
@@ -1837,6 +1914,193 @@ struct APIProviderStep: View {
                 }
             }
         }
+        .overlay {
+            // Unknown key detection overlay
+            if showUnknownDetection {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        if let provider = unknownDetectedProvider {
+                            // Provider detected
+                            VStack(spacing: 12) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.green)
+
+                                Text("Provider Identified")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(DS.text)
+
+                                Text(provider)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(DS.accent)
+                            }
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                    showUnknownDetection = false
+                                    unknownKeySaved = false
+                                    state.goNext()
+                                }
+                            }
+                        } else if showUnknownManualPicker {
+                            ProviderSearchOverlay(
+                                isPresented: $showUnknownManualPicker,
+                                includeMainProviders: true,
+                                onProviderSelected: { providerName in
+                                    unknownDetectedProvider = providerName
+                                    showUnknownManualPicker = false
+                                }
+                            )
+                            .frame(width: 380, height: 420)
+                        } else if unknownDetectionFailed {
+                            // Detection timed out
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(Color(red: 0.95, green: 0.65, blue: 0.20))
+
+                            Text("Sorry, we could not match that API key to a provider. Please make sure you have the right key, and/or attempt to find the provider.")
+                                .font(.system(size: 13))
+                                .foregroundColor(DS.textMuted)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+
+                            HStack(spacing: 10) {
+                                Button(action: {
+                                    unknownDetectionFailed = false
+                                    showUnknownManualPicker = true
+                                }) {
+                                    Text("Select Provider")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(DS.accent)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+
+                                Button(action: {
+                                    showUnknownDetection = false
+                                    unknownDetectionFailed = false
+                                    unknownKeySaved = false
+                                }) {
+                                    Text("Close")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(DS.textMuted)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        } else {
+                            // Scanning state
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.white.opacity(0.08))
+                                        .frame(height: 6)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [DS.accent2, Color(red: 0.55, green: 0.35, blue: 0.85)],
+                                                startPoint: .leading, endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: geo.size.width * unknownDetectionProgress, height: 6)
+                                }
+                            }
+                            .frame(height: 6)
+
+                            Text("Attempting to determine API provider")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(DS.text)
+                                .multilineTextAlignment(.center)
+
+                            if !unknownClickedNo {
+                                Divider()
+                                    .background(DS.border)
+                                    .padding(.horizontal, 8)
+
+                                Text("Do you know which AI provider this key is from?")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(DS.textMuted)
+                                    .multilineTextAlignment(.center)
+
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        showUnknownManualPicker = true
+                                    }) {
+                                        Text("Yes")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 24)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(DS.accent)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(action: {
+                                        unknownClickedNo = true
+                                    }) {
+                                        Text("No")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(DS.textMuted)
+                                            .padding(.horizontal, 24)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .stroke(DS.border, lineWidth: 1)
+                                                    )
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            } else {
+                                Text("Scanning key format...")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(DS.textMuted)
+                                    .multilineTextAlignment(.center)
+
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .tint(DS.textMuted)
+                            }
+                        }
+                    }
+                    .padding(28)
+                    .frame(width: 340)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(DS.border, lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                    )
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showUnknownDetection)
+                .onAppear {
+                    unknownDetectionProgress = 0.0
+                    unknownClickedNo = false
+                    unknownDetectedProvider = nil
+                    unknownDetectionFailed = false
+                    showUnknownManualPicker = false
+                    withAnimation(.linear(duration: 10)) {
+                        unknownDetectionProgress = 1.0
+                    }
+                }
+            }
+        }
     }
 
     private func saveAndDetect() {
@@ -1868,6 +2132,20 @@ struct APIProviderStep: View {
                 } else {
                     modelDetectionFailed = true
                 }
+            }
+        }
+    }
+
+    private func saveUnknownKey() {
+        guard !unknownKeyInput.isEmpty else { return }
+        state.apiKey = unknownKeyInput
+        unknownKeySaved = true
+        showUnknownDetection = true
+
+        // 10s timeout — if no provider identified by then, fail
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            if showUnknownDetection && unknownDetectedProvider == nil && !showUnknownManualPicker {
+                unknownDetectionFailed = true
             }
         }
     }
