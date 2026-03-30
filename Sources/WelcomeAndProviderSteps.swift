@@ -75,7 +75,11 @@ struct AIUsageStep: View {
             .opacity(headerOpacity)
 
             // Biometric checkbox
-            Button(action: { state.requireBiometric.toggle() }) {
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    state.requireBiometric.toggle()
+                }
+            }) {
                 HStack(spacing: 10) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 5)
@@ -104,6 +108,7 @@ struct AIUsageStep: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 40)
