@@ -77,14 +77,13 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
 - **Streamlined flow**: aiUsage → provider/oauth → apiConfig → done (features/channels removed — configurable in agent chat)
-- Provider panel titled "Select Your Intelligence Provider" — title/subtitle are volatile content objects
-- Provider list is in a `ScrollView` to handle overflow in the fixed 720×620 window
+- **Unified provider list**: First page + APIProviderStep both show the same 5 providers (Gemini, ChatGPT, Claude, OpenRouter, Venice) plus an "Add a Provider" card with 18+ searchable extras
+- Provider list is in a `ScrollView` to handle overflow in the fixed 720×700 window
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
 - `OAuthAvailability.from(_:)` converts string values from the registry to the enum
 - `ConsumerAI.oauthSubtitle`, `.oauthButtonEnabled`, `.oauthBadge` resolve from conditionals
 - **Local Models** option: checkbox toggle for Ollama support (`SetupState.wantsLocalModel`)
 - **Inline API Key** input: SecureField + Save button on the provider panel (`SetupState.directAPIKey`)
-- **API Key detection overlay**: 10-second progress bar, "Do you know which provider?" Yes/No, timeout shows error + manual picker
 - **Info popovers**: ⓘ circles on "Get Your API Key" title (explains what an API key is) and "Learn how to get an API key" button (explains when you need one)
 - **File access warning**: ⚠️ amber banner on first page: "NeuralClaw will not have access to any of your device files unless you give it explicit access"
 - **Biometric checkbox**: Touch ID toggle for file access permissions (`SetupState.requireBiometric`, defaults off)
@@ -93,6 +92,30 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
 - API Key Guide step features inline SecureField + Save button per provider card with visual feedback
+- **Install confirmation**: After model pick → "Install NeuralClaw with {model} from {provider}?" → biometric auth (if enabled) → save config → done
+
+## Model Detection Strategy
+When a user saves an API key, the wizard shows a "Detecting provider AI models" overlay. The detection approach varies by provider:
+
+### Tier 1 — Known providers (fast path, ~3s)
+Major providers like **OpenAI, Anthropic, Google, OpenRouter, Venice** have well-known model lists. For these:
+- We already know which models a given API key grants access to
+- Detection is really just a **quick validation ping** to verify the key works
+- On success, auto-navigate to the model picker with the known model list pre-populated
+
+### Tier 2 — Semi-known providers
+Providers like **Mistral, Groq, Together AI, Fireworks** have stable model lists but may require:
+- A `/models` endpoint call to confirm which specific models the key has access to
+- Key format validation (prefix matching, length checks)
+
+### Tier 3 — Unknown/custom providers
+For providers added via "Add a Provider" or custom OpenAI-compatible endpoints:
+- Full model discovery via API introspection (`/v1/models` or equivalent)
+- May require the user to manually specify the base URL
+- 10-second timeout with "No models detected" fallback
+
+### Flow (unified, all pages)
+`Save API key` → `Model detection overlay (10s bar)` → `Model picker` → `Install confirmation` → `Biometric auth` → `Done`
 
 ## Build & Run
 ```bash
