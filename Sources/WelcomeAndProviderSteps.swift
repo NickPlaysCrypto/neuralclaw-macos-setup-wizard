@@ -1151,7 +1151,7 @@ struct OAuthServiceRow: View {
                             Text("Not Available")
                                 .font(.system(size: 13, weight: .semibold))
                         }
-                        Text("This AI provider is not configurable this way, likely due to it being against their TOS (terms of service).")
+                        Text("Log In is not available with this provider, however you may be able to get an API key from them.")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .lineSpacing(2)
