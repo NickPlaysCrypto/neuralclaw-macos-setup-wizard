@@ -191,6 +191,9 @@ struct OAuthInfoStep: View {
     @State private var directAPIKey = ""
     @State private var apiKeySaved = false
     @State private var showLearnInfo = false
+    @State private var showDetection = false
+    @State private var detectedProvider: String? = nil
+    @State private var showManualPicker = false
 
     // Volatile content: title and subtitle can be updated externally
     private var panelTitle: String {
@@ -293,6 +296,170 @@ struct OAuthInfoStep: View {
         }
         .padding(.horizontal, 40)
         .padding(.top, 32)
+        .overlay {
+            // API Provider Detection Overlay
+            if showDetection {
+                ZStack {
+                    // Dim background
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+
+                    // Detection card
+                    VStack(spacing: 0) {
+                        if let provider = detectedProvider {
+                            // Provider detected — show success then auto-dismiss
+                            VStack(spacing: 12) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.green)
+
+                                Text("Provider Identified")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(DS.text)
+
+                                Text(provider)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(DS.accent)
+                            }
+                            .padding(28)
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                    showDetection = false
+                                    apiKeySaved = false
+                                    // TODO: Navigate to model selection for this provider
+                                }
+                            }
+                        } else if showManualPicker {
+                            // Manual provider selection
+                            VStack(spacing: 14) {
+                                Text("Select Your Provider")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(DS.text)
+
+                                VStack(spacing: 8) {
+                                    ForEach(ConsumerAI.allCases) { service in
+                                        Button(action: {
+                                            detectedProvider = "\(service.productName) by \(service.companyName)"
+                                        }) {
+                                            HStack(spacing: 10) {
+                                                Image(systemName: service.icon)
+                                                    .font(.system(size: 14))
+                                                    .foregroundColor(service.iconColor)
+                                                    .frame(width: 24)
+
+                                                Text("\(service.productName) by \(service.companyName)")
+                                                    .font(.system(size: 13, weight: .medium))
+                                                    .foregroundColor(DS.text)
+
+                                                Spacer()
+
+                                                Image(systemName: "chevron.right")
+                                                    .font(.system(size: 10, weight: .bold))
+                                                    .foregroundColor(DS.textDim)
+                                            }
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 10)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.white.opacity(0.04))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .stroke(DS.border, lineWidth: 1)
+                                                    )
+                                            )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+
+                                Button(action: {
+                                    showManualPicker = false
+                                    showDetection = false
+                                    apiKeySaved = false
+                                }) {
+                                    Text("Cancel")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(DS.textMuted)
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 4)
+                            }
+                            .padding(24)
+                        } else {
+                            // Detecting state — spinner + question
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                    .tint(DS.accent)
+
+                                Text("Attempting to determine API provider")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(DS.text)
+                                    .multilineTextAlignment(.center)
+
+                                Divider()
+                                    .background(DS.border)
+                                    .padding(.horizontal, 8)
+
+                                Text("Do you know which AI provider this key is from?")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(DS.textMuted)
+                                    .multilineTextAlignment(.center)
+
+                                HStack(spacing: 12) {
+                                    Button(action: {
+                                        showManualPicker = true
+                                    }) {
+                                        Text("Yes")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 24)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(DS.accent)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(action: {
+                                        // Stay on detecting — wait for auto-detection
+                                    }) {
+                                        Text("No")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(DS.textMuted)
+                                            .padding(.horizontal, 24)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .stroke(DS.border, lineWidth: 1)
+                                                    )
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(28)
+                        }
+                    }
+                    .frame(width: 320)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(DS.border, lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                    )
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showDetection)
+            }
+        }
     }
 
     // MARK: - Local Model Row
@@ -434,8 +601,14 @@ struct OAuthInfoStep: View {
                     guard !directAPIKey.isEmpty else { return }
                     state.directAPIKey = directAPIKey
                     apiKeySaved = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        apiKeySaved = false
+                    showDetection = true
+                    // Start simulated auto-detection
+                    // TODO: Replace with real API provider detection logic
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        // Simulated: detection completes (or times out)
+                        // In production, this would be triggered by a real signal
+                        // detectedProvider = "OpenAI"
+                        // showDetection = false
                     }
                 }) {
                     HStack(spacing: 4) {
