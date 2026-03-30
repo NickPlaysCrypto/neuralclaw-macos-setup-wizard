@@ -330,10 +330,19 @@ struct APIConfigStep: View {
         isInstalling = true
         state.saveConfiguration()
 
+        // Wait for config to be written, then launch NeuralClaw and show success
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             isInstalling = false
             withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                 installSuccess = true
+            }
+
+            // Launch the actual NeuralClaw app from /Applications
+            state.launchNeuralClaw()
+
+            // Auto-close the setup wizard after a brief moment
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                NSApplication.shared.terminate(nil)
             }
         }
     }
