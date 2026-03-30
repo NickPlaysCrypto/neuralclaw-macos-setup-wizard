@@ -402,3 +402,34 @@ enum OAuthAvailability {
         }
     }
 }
+
+// MARK: - Extended Provider List (searchable)
+
+struct ExtraProvider: Identifiable {
+    let id: String
+    let name: String
+    let company: String
+    let icon: String
+    let color: Color
+
+    static let all: [ExtraProvider] = [
+        ExtraProvider(id: "mistral", name: "Mistral", company: "Mistral AI", icon: "wind", color: Color(red: 0.95, green: 0.55, blue: 0.15)),
+        ExtraProvider(id: "cohere", name: "Cohere", company: "Cohere Inc.", icon: "circle.hexagongrid.fill", color: Color(red: 0.25, green: 0.75, blue: 0.55)),
+        ExtraProvider(id: "perplexity", name: "Perplexity", company: "Perplexity AI", icon: "safari", color: Color(red: 0.20, green: 0.75, blue: 0.85)),
+        ExtraProvider(id: "groq", name: "Groq", company: "Groq Inc.", icon: "bolt.horizontal.fill", color: Color(red: 0.90, green: 0.35, blue: 0.25)),
+        ExtraProvider(id: "together", name: "Together AI", company: "Together Computer", icon: "square.stack.3d.up.fill", color: Color(red: 0.40, green: 0.50, blue: 0.90)),
+        ExtraProvider(id: "fireworks", name: "Fireworks AI", company: "Fireworks", icon: "flame.fill", color: Color(red: 0.95, green: 0.45, blue: 0.20)),
+        ExtraProvider(id: "deepseek", name: "DeepSeek", company: "DeepSeek AI", icon: "magnifyingglass.circle.fill", color: Color(red: 0.30, green: 0.60, blue: 0.95)),
+        ExtraProvider(id: "xai", name: "Grok", company: "xAI", icon: "xmark.octagon.fill", color: Color(red: 0.85, green: 0.85, blue: 0.85)),
+        ExtraProvider(id: "ai21", name: "AI21 Labs", company: "AI21 Labs", icon: "text.book.closed.fill", color: Color(red: 0.30, green: 0.55, blue: 0.80)),
+        ExtraProvider(id: "replicate", name: "Replicate", company: "Replicate Inc.", icon: "arrow.triangle.2.circlepath", color: Color(red: 0.75, green: 0.50, blue: 0.85)),
+        ExtraProvider(id: "huggingface", name: "Hugging Face", company: "Hugging Face", icon: "face.smiling.fill", color: Color(red: 0.95, green: 0.75, blue: 0.15)),
+        ExtraProvider(id: "aws_bedrock", name: "AWS Bedrock", company: "Amazon", icon: "server.rack", color: Color(red: 0.95, green: 0.60, blue: 0.20)),
+        ExtraProvider(id: "azure_openai", name: "Azure OpenAI", company: "Microsoft", icon: "cloud.fill", color: Color(red: 0.30, green: 0.65, blue: 0.90)),
+        ExtraProvider(id: "vertex", name: "Vertex AI", company: "Google Cloud", icon: "cpu.fill", color: Color(red: 0.26, green: 0.52, blue: 0.96)),
+        ExtraProvider(id: "sambanova", name: "SambaNova", company: "SambaNova Systems", icon: "waveform.path.ecg", color: Color(red: 0.20, green: 0.80, blue: 0.45)),
+        ExtraProvider(id: "cerebras", name: "Cerebras", company: "Cerebras Systems", icon: "cube.fill", color: Color(red: 0.55, green: 0.35, blue: 0.85)),
+        ExtraProvider(id: "ollama", name: "Ollama (Local)", company: "Local inference", icon: "desktopcomputer", color: Color(red: 0.65, green: 0.75, blue: 0.85)),
+        ExtraProvider(id: "lmstudio", name: "LM Studio", company: "Local inference", icon: "display", color: Color(red: 0.50, green: 0.85, blue: 0.65)),
+    ]
+}

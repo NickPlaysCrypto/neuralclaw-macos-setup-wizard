@@ -6,6 +6,8 @@ struct AIUsageStep: View {
     @EnvironmentObject var state: SetupState
     @State private var headerOpacity: Double = 0
     @State private var cardsOffset: CGFloat = 20
+    @State private var showProviderSearch = false
+    @State private var searchText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -32,7 +34,7 @@ struct AIUsageStep: View {
             .opacity(headerOpacity)
             .padding(.bottom, 18)
 
-            // Service cards — grid layout (3+2)
+            // Service cards — grid layout (3+3)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: 3), spacing: 14) {
                 ForEach(ConsumerAI.allCases) { service in
                     ConsumerAICard(
@@ -41,6 +43,58 @@ struct AIUsageStep: View {
                         onToggle: { state.toggleService(service) }
                     )
                 }
+
+                // "Add a Provider" card
+                Button(action: { showProviderSearch = true }) {
+                    VStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [DS.accent.opacity(0.12), DS.accent2.opacity(0.12)],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Circle()
+                                        .stroke(DS.accent.opacity(0.2), lineWidth: 1.5)
+                                )
+
+                            Image(systemName: "plus")
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundColor(DS.accent)
+                        }
+
+                        Text("Add a Provider")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(DS.textMuted)
+
+                        Text("Search more")
+                            .font(.system(size: 11))
+                            .foregroundColor(DS.textDim)
+
+                        // Spacer to match checkbox height
+                        Spacer().frame(height: 22)
+                    }
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.black.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [DS.accent.opacity(0.2), DS.accent2.opacity(0.2)],
+                                            startPoint: .topLeading, endPoint: .bottomTrailing
+                                        ),
+                                        style: StrokeStyle(lineWidth: 1, dash: [6, 4])
+                                    )
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
             }
             .offset(y: cardsOffset)
             .opacity(headerOpacity)
@@ -71,7 +125,7 @@ struct AIUsageStep: View {
                     )
             )
             .padding(.horizontal, 40)
-            .padding(.top, 16)
+            .padding(.top, 12)
             .opacity(headerOpacity)
 
             // Biometric checkbox
@@ -112,7 +166,7 @@ struct AIUsageStep: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, 40)
-            .padding(.top, 10)
+            .padding(.top, 8)
             .opacity(headerOpacity)
 
             Spacer()
@@ -162,7 +216,7 @@ struct AIUsageStep: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 40)
-            .padding(.bottom, 24)
+            .padding(.bottom, 20)
             .animation(.easeInOut(duration: 0.25), value: state.selectedServices)
         }
         .onAppear {
@@ -171,6 +225,142 @@ struct AIUsageStep: View {
                 cardsOffset = 0
             }
         }
+        .overlay {
+            if showProviderSearch {
+                providerSearchOverlay
+            }
+        }
+    }
+
+    // MARK: - Provider Search Overlay
+
+    private var filteredProviders: [ExtraProvider] {
+        if searchText.isEmpty { return ExtraProvider.all }
+        return ExtraProvider.all.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText) ||
+            $0.company.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    private var providerSearchOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.6).ignoresSafeArea()
+                .onTapGesture { showProviderSearch = false }
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Add a Provider")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(DS.text)
+                        Text("Search and select additional AI providers")
+                            .font(.system(size: 12))
+                            .foregroundColor(DS.textMuted)
+                    }
+
+                    Spacer()
+
+                    Button(action: { showProviderSearch = false }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(DS.textDim)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+                .padding(.bottom, 12)
+
+                // Search field
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13))
+                        .foregroundColor(DS.textDim)
+
+                    TextField("Search providers...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14))
+                        .foregroundColor(DS.text)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.3))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(DS.border, lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+
+                Divider().background(DS.border)
+
+                // Provider list
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(filteredProviders) { provider in
+                            let isAdded = state.extraProviders.contains(provider.id)
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    if isAdded {
+                                        state.extraProviders.remove(provider.id)
+                                    } else {
+                                        state.extraProviders.insert(provider.id)
+                                    }
+                                }
+                            }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: provider.icon)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(provider.color)
+                                        .frame(width: 24)
+
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(provider.name)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(DS.text)
+                                        Text(provider.company)
+                                            .font(.system(size: 11))
+                                            .foregroundColor(DS.textMuted)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(isAdded ? DS.accent3 : DS.textDim)
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(isAdded ? DS.accent3.opacity(0.06) : Color.clear)
+                                )
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                }
+                .frame(maxHeight: 300)
+            }
+            .frame(width: 380)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(DS.border, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            )
+        }
+        .transition(.opacity)
     }
 }
 

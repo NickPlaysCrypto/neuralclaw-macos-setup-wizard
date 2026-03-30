@@ -13,6 +13,7 @@ class SetupState: ObservableObject {
     @Published var wantsLocalModel: Bool = false
     @Published var directAPIKey: String = ""
     @Published var requireBiometric: Bool = false
+    @Published var extraProviders: Set<String> = []
 
     // MARK: - Provider / API config
     @Published var provider: AIProvider = .openai
