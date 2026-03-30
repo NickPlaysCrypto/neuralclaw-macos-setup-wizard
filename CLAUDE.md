@@ -76,6 +76,7 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
+- **Streamlined flow**: aiUsage → provider/oauth → apiConfig → done (features/channels removed — configurable in agent chat)
 - Provider panel titled "Select Your Intelligence Provider" — title/subtitle are volatile content objects
 - Provider list is in a `ScrollView` to handle overflow in the fixed 720×620 window
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
@@ -83,7 +84,11 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 - `ConsumerAI.oauthSubtitle`, `.oauthButtonEnabled`, `.oauthBadge` resolve from conditionals
 - **Local Models** option: checkbox toggle for Ollama support (`SetupState.wantsLocalModel`)
 - **Inline API Key** input: SecureField + Save button on the provider panel (`SetupState.directAPIKey`)
+- **API Key detection overlay**: 10-second progress bar, "Do you know which provider?" Yes/No, timeout shows error + manual picker
 - **Info popovers**: ⓘ circles on "Get Your API Key" title (explains what an API key is) and "Learn how to get an API key" button (explains when you need one)
+- **File access warning**: ⚠️ amber banner on first page: "NeuralClaw will not have access to any of your device files unless you give it explicit access"
+- **Biometric checkbox**: Touch ID toggle for file access permissions (`SetupState.requireBiometric`, defaults off)
+- **Done step**: saves config, shows "Good Luck!" message, Close button terminates wizard. Does NOT auto-launch any apps
 - Page sequence is dynamic based on chosen path
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
