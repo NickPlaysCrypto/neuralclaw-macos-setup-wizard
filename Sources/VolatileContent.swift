@@ -71,6 +71,9 @@ struct VolatileEntry: Codable {
     // Keys that this entry affects when it changes
     let affects: [String]?
 
+    // Quality of the data feed that keeps this entry updated
+    let feedQuality: FeedQuality?
+
     var staleThreshold: TimeInterval {
         TimeInterval((staleAfterDays ?? 30) * 86400)
     }
@@ -94,6 +97,38 @@ struct VolatileEntry: Codable {
         if ratio < 1.0 { return .stale }
         if ratio < 2.0 { return .expired }
         return .critical
+    }
+
+    /// The resolved feed quality (defaults to .disconnected if not set)
+    var resolvedFeedQuality: FeedQuality {
+        feedQuality ?? (verify != nil ? .manual : .disconnected)
+    }
+
+    /// Overall happiness score (0.0 = miserable, 1.0 = thriving).
+    /// Combines freshness and feed quality into a single metric.
+    /// A fresh entry with a gold API is 1.0 (thriving).
+    /// A critical entry with no feed is 0.0 (miserable).
+    var happiness: Double {
+        let freshnessScore: Double = {
+            switch urgency {
+            case .fresh:    return 1.0
+            case .aging:    return 0.75
+            case .stale:    return 0.45
+            case .expired:  return 0.2
+            case .critical: return 0.0
+            }
+        }()
+        let feedScore: Double = {
+            switch resolvedFeedQuality {
+            case .goldAPI:      return 1.0
+            case .structured:   return 0.8
+            case .scraped:      return 0.55
+            case .manual:       return 0.3
+            case .disconnected: return 0.0
+            }
+        }()
+        // Weighted: freshness matters more (60%) but feed quality is the path to staying fresh (40%)
+        return (freshnessScore * 0.6) + (feedScore * 0.4)
     }
 
     /// Resolve a conditional field based on the current value.
@@ -137,6 +172,76 @@ enum ContentUrgency: Int, Codable, Comparable {
         case .stale:    return "Stale"
         case .expired:  return "Expired"
         case .critical: return "Critical"
+        }
+    }
+}
+
+// MARK: - Feed Quality
+
+/// How good is the data source that keeps this content updated?
+/// The agent's ongoing mission is to upgrade entries toward goldAPI.
+///
+/// Think of it as: how well-fed is this entry?
+/// - Gold API: eating gourmet meals on a schedule — always satisfied
+/// - Disconnected: starving, no food source — needs immediate help
+///
+/// The agent uses this to prioritize finding better data sources.
+enum FeedQuality: Int, Codable, Comparable, CaseIterable {
+    /// Direct API endpoint returning structured JSON on demand.
+    /// Example: OpenAI /v1/models, OpenRouter /api/v1/models
+    /// Can be queried programmatically for real-time data.
+    /// The entry is essentially self-updating.
+    case goldAPI      = 4
+
+    /// Reliable structured source: RSS feed, well-maintained docs page,
+    /// webhook, or changelog with predictable format.
+    /// Data is good and extraction is reliable, but not on-demand.
+    case structured   = 3
+
+    /// Website scraping required. The data exists on a web page but
+    /// needs to be scraped/parsed. Data is accurate when retrieved,
+    /// but the page structure may change without notice.
+    case scraped      = 2
+
+    /// Requires a human or AI agent to manually research and verify.
+    /// No automated pipeline — someone has to go look.
+    case manual       = 1
+
+    /// No known data source. This entry is flying blind.
+    /// HIGHEST PRIORITY for the agent to find a source.
+    case disconnected = 0
+
+    static func < (lhs: FeedQuality, rhs: FeedQuality) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+
+    var emoji: String {
+        switch self {
+        case .goldAPI:      return "🥇"
+        case .structured:   return "🥈"
+        case .scraped:      return "🥉"
+        case .manual:       return "🔧"
+        case .disconnected: return "💀"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .goldAPI:      return "Gold API"
+        case .structured:   return "Structured"
+        case .scraped:      return "Scraped"
+        case .manual:       return "Manual"
+        case .disconnected: return "Disconnected"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .goldAPI:      return "Direct API, on-demand structured data"
+        case .structured:   return "Reliable docs/feed, predictable format"
+        case .scraped:      return "Web scraping, data good but fragile"
+        case .manual:       return "Requires manual research to verify"
+        case .disconnected: return "No data source — flying blind"
         }
     }
 }
@@ -361,6 +466,62 @@ final class ContentRegistry {
         return parts.joined(separator: "  ")
     }
 
+    // MARK: - Feed Quality & Happiness
+
+    /// Get the feed quality of a specific key
+    func feedQuality(of key: String) -> FeedQuality {
+        entries[key]?.resolvedFeedQuality ?? .disconnected
+    }
+
+    /// Get the happiness score of a specific key (0.0-1.0)
+    func happiness(of key: String) -> Double {
+        entries[key]?.happiness ?? 0.0
+    }
+
+    /// Overall system happiness — average across all entries
+    var systemHappiness: Double {
+        guard !entries.isEmpty else { return 0.0 }
+        let total = entries.values.reduce(0.0) { $0 + $1.happiness }
+        return total / Double(entries.count)
+    }
+
+    /// Entries that need better data sources, prioritized:
+    /// disconnected first, then manual, then scraped.
+    /// The agent uses this to find and upgrade feed quality.
+    var sourceUpgradeQueue: [VolatileEntry] {
+        entries.values
+            .filter { $0.resolvedFeedQuality < .structured }
+            .sorted { lhs, rhs in
+                // Primary: worst feed quality first (disconnected before manual)
+                if lhs.resolvedFeedQuality != rhs.resolvedFeedQuality {
+                    return lhs.resolvedFeedQuality < rhs.resolvedFeedQuality
+                }
+                // Secondary: most urgent first
+                return lhs.urgency.rawValue > rhs.urgency.rawValue
+            }
+    }
+
+    /// Entries with gold-standard API feeds (thriving, well-fed)
+    var goldEntries: [VolatileEntry] {
+        entries.values.filter { $0.resolvedFeedQuality == .goldAPI }
+    }
+
+    /// Diagnostic summary of feed quality across the system
+    var feedQualitySummary: String {
+        let grouped = Dictionary(grouping: entries.values, by: \.resolvedFeedQuality)
+        let parts = FeedQuality.allCases.reversed().compactMap { level -> String? in
+            guard let count = grouped[level]?.count, count > 0 else { return nil }
+            return "\(level.emoji) \(count) \(level.label.lowercased())"
+        }
+        return parts.joined(separator: "  ")
+    }
+
+    /// Full diagnostic: freshness + feed quality + happiness
+    var systemDiagnostic: String {
+        let pct = Int(systemHappiness * 100)
+        return "Happiness: \(pct)%  |  Freshness: \(freshnessSummary)  |  Feeds: \(feedQualitySummary)"
+    }
+
     // MARK: - Update from external data
 
     /// Update the registry from a JSON data blob (e.g., downloaded feed)
@@ -385,7 +546,8 @@ final class ContentRegistry {
             value: value,
             verify: existing?.verify,
             conditionals: existing?.conditionals,
-            affects: existing?.affects
+            affects: existing?.affects,
+            feedQuality: existing?.feedQuality
         )
         entries[key] = entry
         saveLocalCache()

@@ -33,7 +33,8 @@ let isNull = ContentRegistry.shared.conditionalIsNull("google.oauthStatus", fiel
   "value": "currentValue",
   "verify": { ... },
   "conditionals": { ... },
-  "affects": null
+  "affects": null,
+  "feedQuality": "manual"
 }
 ```
 
@@ -105,7 +106,10 @@ var models: [String] {
     "unavailable": { "subtitle": "Not available via login",     "badge": "Unavailable",  "buttonEnabled": false }
   },
 
-  "affects": ["openai.oauthSubtitle"]  // Other keys this entry impacts (for dependency tracking)
+  "affects": ["openai.oauthSubtitle"],  // Other keys this entry impacts (for dependency tracking)
+
+  "feedQuality": "manual"              // How good is the data source? (see Feed Quality below)
+                                        // goldAPI | structured | scraped | manual | disconnected
 }
 ```
 
@@ -144,6 +148,73 @@ Access urgency:
 let urgency = ContentRegistry.shared.urgency(of: "openai.models")  // .fresh, .aging, etc.
 let needsWork = ContentRegistry.shared.entries(above: .stale)       // all stale+ entries
 let queue = ContentRegistry.shared.verificationQueue                // stale+ with verify instructions
+```
+
+---
+
+## Feed Quality (how well-fed is this entry?)
+
+Every entry has a `feedQuality` that grades how reliable its data source is.
+The agent's ongoing mission is to **upgrade entries toward goldAPI**.
+
+```
+Rank    Emoji   Name           Description                              Example
+────    ─────   ────           ───────────                              ───────
+4       🥇      Gold API       Direct API, structured JSON on demand    OpenAI /v1/models
+3       🥈      Structured     Reliable docs/feed, predictable format   Anthropic models docs page
+2       🥉      Scraped        Web scraping, data good but fragile       aistudio.google.com/apikey
+1       🔧      Manual         Requires manual research to verify        OAuth status checks
+0       💀      Disconnected   No data source — flying blind             Company names, descriptions
+```
+
+### How the agent uses feed quality
+
+1. **`sourceUpgradeQueue`** — Entries with quality < `structured`, sorted worst-first
+   ```swift
+   let needsBetterFeeds = ContentRegistry.shared.sourceUpgradeQueue
+   // Returns: disconnected entries first, then manual, then scraped
+   ```
+
+2. **Agent priorities**:
+   - 💀 **Disconnected → Find ANY source** (highest priority)
+   - 🔧 **Manual → Find a scrapeable page or API**
+   - 🥉 **Scraped → Find a structured feed or API**
+   - 🥈 **Structured → Find a direct API** (nice-to-have)
+   - 🥇 **Gold API → Already optimal** (no action needed)
+
+3. **Setting feed quality** in `volatile_defaults.json`:
+   ```json
+   "feedQuality": "goldAPI"      // or "structured", "scraped", "manual", "disconnected"
+   ```
+
+4. **Defaults**: If `feedQuality` is not set:
+   - Entries WITH `verify` instructions default to `manual`
+   - Entries WITHOUT `verify` default to `disconnected`
+
+---
+
+## Happiness System
+
+Each entry has a **happiness score** (0.0 – 1.0) that combines freshness and feed quality:
+
+```
+Happiness = (freshness_score × 0.6) + (feed_quality_score × 0.4)
+```
+
+| Score | Freshness Weight | Feed Quality Weight | Meaning |
+|---|---|---|---|
+| 1.0 | Fresh (1.0) | Gold API (1.0) | Thriving — best possible state |
+| ~0.7 | Fresh (1.0) | Manual (0.3) | Fresh but fragile — needs better feed |
+| ~0.5 | Stale (0.45) | Scraped (0.55) | Middling — needs refresh AND better feed |
+| ~0.1 | Expired (0.2) | Disconnected (0.0) | Suffering — urgent attention needed |
+| 0.0 | Critical (0.0) | Disconnected (0.0) | Miserable — data is unreliable |
+
+Access happiness:
+```swift
+let score = ContentRegistry.shared.happiness(of: "openai.models")   // 0.0 - 1.0
+let system = ContentRegistry.shared.systemHappiness                 // average across all entries
+let diag = ContentRegistry.shared.systemDiagnostic                  // full text diagnostic
+// "Happiness: 62%  |  Freshness: 🟢 15 fresh  🟡 8 aging  |  Feeds: 🥇 2 gold api  🥉 6 scraped  💀 10 disconnected"
 ```
 
 ---
@@ -250,17 +321,21 @@ For non-provider content, use: `{component}.{property}`
 ## Currently Tracked Volatile Content (27 entries)
 
 ### Consumer AI (3 providers × 5-7 properties)
-| Key | Category | Stale After | Has Verify | Has Conditionals |
-|---|---|---|---|---|
-| `{provider}.productName` | label | 90 days | ✅ (checkURL) | ❌ |
-| `{provider}.companyName` | label | 365 days | ❌ | ❌ |
-| `{provider}.oauthStatus` | status | 14-30 days | ✅ (checkURL/webSearch) | ✅ (subtitle, badge, buttonEnabled, buttonLabel) |
-| `{provider}.apiKeyURL` | url | 30 days | ✅ (checkURL) | ❌ |
-| `{provider}.apiKeySteps` | steps | 30 days | ✅ (checkURL) | ❌ |
+| Key | Category | Stale After | Feed Quality | Has Verify | Has Conditionals |
+|---|---|---|---|---|---|
+| `{provider}.productName` | label | 90 days | 🔧 Manual | ✅ (checkURL) | ❌ |
+| `{provider}.companyName` | label | 365 days | 💀 Disconnected | ❌ | ❌ |
+| `{provider}.oauthStatus` | status | 14-30 days | 🔧 Manual | ✅ (checkURL/webSearch) | ✅ (subtitle, badge, buttonEnabled) |
+| `{provider}.apiKeyURL` | url | 30 days | 🥉 Scraped | ✅ (checkURL) | ❌ |
+| `{provider}.apiKeySteps` | steps | 30 days | 🥉 Scraped | ✅ (checkURL) | ❌ |
 
 ### AI Providers (5 providers × 2-3 properties)
-| Key | Category | Stale After | Has Verify | Has Conditionals |
-|---|---|---|---|---|
-| `{provider}.models` | modelList | 7-14 days | ✅ (apiProbe/checkURL) | ❌ |
-| `{provider}.desc` | label | 60 days | ❌ | ❌ |
-| `{provider}.keyPlaceholder` | label | 90 days | ❌ | ❌ |
+| Key | Category | Stale After | Feed Quality | Has Verify | Has Conditionals |
+|---|---|---|---|---|---|
+| `openai.models` | modelList | 7 days | 🥇 Gold API | ✅ (apiProbe) | ❌ |
+| `openrouter.models` | modelList | 7 days | 🥇 Gold API | ✅ (apiProbe) | ❌ |
+| `anthropic.models` | modelList | 7 days | 🥈 Structured | ✅ (checkURL) | ❌ |
+| `venice.models` | modelList | 7 days | 🥈 Structured | ✅ (checkURL) | ❌ |
+| `local.models` | modelList | 14 days | 🥈 Structured | ✅ (checkURL) | ❌ |
+| `{provider}.desc` | label | 60 days | 💀 Disconnected | ❌ | ❌ |
+| `{provider}.keyPlaceholder` | label | 90 days | 💀 Disconnected | ❌ | ❌ |
