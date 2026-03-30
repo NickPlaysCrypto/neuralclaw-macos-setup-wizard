@@ -79,6 +79,10 @@ struct VolatileEntry: Codable {
     // Quality of the data feed that keeps this entry updated
     let feedQuality: FeedQuality?
 
+    // How many meta-tags this entry had when the agent last checked.
+    // Compared against MetaTagStore to detect new unread annotations.
+    var lastMetaTagCount: Int?
+
     var staleThreshold: TimeInterval {
         TimeInterval((staleAfterDays ?? 30) * 86400)
     }
@@ -552,10 +556,33 @@ final class ContentRegistry {
             verify: existing?.verify,
             conditionals: existing?.conditionals,
             affects: existing?.affects,
-            feedQuality: existing?.feedQuality
+            feedQuality: existing?.feedQuality,
+            lastMetaTagCount: existing?.lastMetaTagCount
         )
         entries[key] = entry
         saveLocalCache()
+    }
+
+    /// Mark that the agent has reviewed all current meta-tags for a key.
+    /// Updates lastMetaTagCount to the current count in MetaTagStore.
+    func markTagsReviewed(for key: String) {
+        guard var entry = entries[key] else { return }
+        let currentCount = MetaTagStore.shared.tags(for: key).count
+        entry.lastMetaTagCount = currentCount
+        entries[key] = entry
+        saveLocalCache()
+    }
+
+    /// Check if a key has new meta-tags since the agent last reviewed.
+    func hasNewTags(for key: String) -> Bool {
+        let lastCount = entries[key]?.lastMetaTagCount ?? 0
+        let currentCount = MetaTagStore.shared.tags(for: key).count
+        return currentCount > lastCount
+    }
+
+    /// All keys that have unread meta-tags
+    var keysWithNewTags: [String] {
+        entries.keys.filter { hasNewTags(for: $0) }.sorted()
     }
 
     // MARK: - Remote Feed (stubbed for future)
