@@ -79,58 +79,120 @@ struct ChannelRow: View {
 struct DoneStep: View {
     @EnvironmentObject var state: SetupState
     @State private var checkScale: CGFloat = 0
+    @State private var agentLaunched = false
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Checkmark
-            ZStack {
-                Circle()
-                    .fill(
+            if state.isSaving {
+                // Saving state
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .tint(DS.accent)
+
+                    Text("Saving configuration...")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(DS.textMuted)
+                }
+            } else {
+                // Success — show rocket + good luck
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [DS.accent3.opacity(0.2), Color(red: 0.18, green: 0.83, blue: 0.75).opacity(0.1)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 72, height: 72)
+                        .overlay(
+                            Circle().stroke(DS.accent3.opacity(0.3), lineWidth: 2)
+                        )
+
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundColor(DS.accent3)
+                }
+                .scaleEffect(checkScale)
+                .padding(.bottom, 20)
+
+                Text("You're All Set!")
+                    .font(.system(size: 24, weight: .heavy))
+                    .foregroundStyle(
                         LinearGradient(
-                            colors: [DS.accent3.opacity(0.2), Color(red: 0.18, green: 0.83, blue: 0.75).opacity(0.1)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
+                            colors: [DS.text, DS.accent3],
+                            startPoint: .leading, endPoint: .trailing
                         )
                     )
-                    .frame(width: 64, height: 64)
-                    .overlay(
-                        Circle().stroke(DS.accent3.opacity(0.3), lineWidth: 2)
-                    )
+                    .padding(.bottom, 8)
 
-                Image(systemName: "checkmark")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(DS.accent3)
-            }
-            .scaleEffect(checkScale)
-            .padding(.bottom, 16)
+                Text("You can use the agent to do anything\nfrom here! Good Luck!")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(DS.textMuted)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .padding(.bottom, 8)
 
-            Text("You're All Set")
-                .font(.system(size: 24, weight: .heavy))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [DS.text, DS.accent3],
-                        startPoint: .leading, endPoint: .trailing
-                    )
-                )
-                .padding(.bottom, 6)
+                if agentLaunched {
+                    HStack(spacing: 6) {
+                        Image(systemName: "menubar.arrow.up.rectangle")
+                            .font(.system(size: 12))
+                        Text("NeuralClaw is running in your menu bar")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(DS.accent.opacity(0.7))
+                    .padding(.bottom, 24)
+                }
 
-            Text("NeuralClaw is configured and ready to go.\nHere's a summary of your setup:")
-                .font(.system(size: 14))
-                .foregroundColor(DS.textMuted)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-                .padding(.bottom, 24)
-
-            // Summary grid
-            summaryGrid
+                // Summary cards
+                HStack(spacing: 12) {
+                    SummaryCard(label: "Provider", value: state.provider.label)
+                    SummaryCard(label: "Model", value: state.selectedModel)
+                }
                 .padding(.horizontal, 40)
+                .padding(.bottom, 28)
+
+                // Close button
+                Button(action: {
+                    NSApplication.shared.terminate(nil)
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Close Setup Wizard")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(
+                                LinearGradient(
+                                    colors: [DS.accent, DS.accent2],
+                                    startPoint: .leading, endPoint: .trailing
+                                )
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
 
             Spacer()
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2)) {
+            // Save config and launch agent
+            state.saveConfiguration()
+
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.3)) {
                 checkScale = 1.0
+            }
+
+            // Launch the NeuralClaw agent after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                launchAgent()
             }
         }
         .onDisappear {
@@ -138,21 +200,35 @@ struct DoneStep: View {
         }
     }
 
-    private var summaryGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            SummaryCard(label: "Provider", value: state.provider.label)
-            SummaryCard(label: "Model", value: state.selectedModel)
-            SummaryCard(label: "Fallback", value: state.fallback.isEmpty ? "—" : state.fallback)
-            SummaryCard(label: "Features", value: "\(state.features.filter(\.enabled).count) enabled")
-            SummaryCard(
-                label: "Channels",
-                value: {
-                    let enabled = state.channels.filter(\.enabled)
-                    return enabled.isEmpty ? "None yet" : enabled.map(\.name).joined(separator: ", ")
-                }()
-            )
-            SummaryCard(label: "Config Path", value: "~/.neuralclaw/config.toml", isSmall: true)
+    private func launchAgent() {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+
+        // Try to launch the NeuralClaw agent from common locations
+        let possiblePaths = [
+            home.appendingPathComponent("Desktop/NeuralClaw.app"),
+            home.appendingPathComponent("Applications/NeuralClaw.app"),
+            URL(fileURLWithPath: "/Applications/NeuralClaw.app"),
+        ]
+
+        for appURL in possiblePaths {
+            if FileManager.default.fileExists(atPath: appURL.path) {
+                let config = NSWorkspace.OpenConfiguration()
+                config.activates = false // Don't steal focus from wizard
+                NSWorkspace.shared.openApplication(at: appURL, configuration: config) { _, error in
+                    DispatchQueue.main.async {
+                        agentLaunched = (error == nil)
+                    }
+                }
+                return
+            }
         }
+
+        // Fallback: try to find via 'open' command
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-a", "NeuralClaw"]
+        try? task.run()
+        agentLaunched = true
     }
 }
 

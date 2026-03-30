@@ -49,12 +49,12 @@ class SetupState: ObservableObject {
 
     /// The ordered pages for the consumer (OAuth) path
     private var consumerPages: [WizardPage] {
-        [.aiUsage, .oauthInfo, .apiKeyGuide, .apiConfig, .features, .channels, .done]
+        [.aiUsage, .oauthInfo, .apiKeyGuide, .apiConfig, .done]
     }
 
     /// The ordered pages for the "I have an API key" path
     private var apiKeyPages: [WizardPage] {
-        [.aiUsage, .apiProvider, .apiConfig, .features, .channels, .done]
+        [.aiUsage, .apiProvider, .apiConfig, .done]
     }
 
     /// Current page sequence based on chosen path (defaults to consumer before path is set)

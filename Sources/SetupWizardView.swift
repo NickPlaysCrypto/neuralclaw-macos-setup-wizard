@@ -40,14 +40,6 @@ struct SetupWizardView: View {
                         .opacity(state.currentPage == .apiConfig ? 1 : 0)
                         .offset(x: pageOffset(for: .apiConfig))
 
-                    FeaturesStep()
-                        .opacity(state.currentPage == .features ? 1 : 0)
-                        .offset(x: pageOffset(for: .features))
-
-                    ChannelsStep()
-                        .opacity(state.currentPage == .channels ? 1 : 0)
-                        .offset(x: pageOffset(for: .channels))
-
                     DoneStep()
                         .opacity(state.currentPage == .done ? 1 : 0)
                         .offset(x: pageOffset(for: .done))
@@ -55,8 +47,8 @@ struct SetupWizardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
 
-                // Footer navigation (hidden on aiUsage — it has its own buttons)
-                if state.currentPage != .aiUsage {
+                // Footer navigation (hidden on aiUsage and done)
+                if state.currentPage != .aiUsage && state.currentPage != .done {
                     footerNav
                 }
             }
