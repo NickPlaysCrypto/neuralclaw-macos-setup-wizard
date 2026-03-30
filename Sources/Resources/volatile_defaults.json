@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "generated": "2026-03-29T21:00:00Z",
+  "content": {
+    "google.apiKeyURL": {
+      "key": "google.apiKeyURL",
+      "category": "url",
+      "source": "https://aistudio.google.com/apikey",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": "aistudio.google.com/apikey"
+    },
+    "google.apiKeySteps": {
+      "key": "google.apiKeySteps",
+      "category": "steps",
+      "source": "https://aistudio.google.com/apikey",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": [
+        "Go to aistudio.google.com",
+        "Sign in with your Google account",
+        "Click \"Get API key\" in the sidebar",
+        "Create a new key and copy it"
+      ]
+    },
+    "openai.apiKeyURL": {
+      "key": "openai.apiKeyURL",
+      "category": "url",
+      "source": "https://platform.openai.com/api-keys",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": "platform.openai.com/api-keys"
+    },
+    "openai.apiKeySteps": {
+      "key": "openai.apiKeySteps",
+      "category": "steps",
+      "source": "https://platform.openai.com/api-keys",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": [
+        "Go to platform.openai.com",
+        "Sign in or create an account",
+        "Navigate to API Keys in Settings",
+        "Click \"Create new secret key\""
+      ]
+    },
+    "anthropic.apiKeyURL": {
+      "key": "anthropic.apiKeyURL",
+      "category": "url",
+      "source": "https://console.anthropic.com/settings/keys",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": "console.anthropic.com/settings/keys"
+    },
+    "anthropic.apiKeySteps": {
+      "key": "anthropic.apiKeySteps",
+      "category": "steps",
+      "source": "https://console.anthropic.com/settings/keys",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": [
+        "Go to console.anthropic.com",
+        "Sign in or create an account",
+        "Go to Settings → API Keys",
+        "Click \"Create Key\" and copy it"
+      ]
+    },
+    "openai.models": {
+      "key": "openai.models",
+      "category": "modelList",
+      "source": "https://platform.openai.com/docs/models",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 7,
+      "value": ["gpt-5.4", "gpt-5.4-mini", "gpt-5.4-pro", "gpt-5.3-codex", "gpt-5.2", "o4-mini", "o3", "o3-pro", "gpt-4.1", "gpt-4.1-mini"]
+    },
+    "anthropic.models": {
+      "key": "anthropic.models",
+      "category": "modelList",
+      "source": "https://docs.anthropic.com/en/docs/about-claude/models",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 7,
+      "value": ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001", "claude-sonnet-4-5-20250929"]
+    },
+    "openrouter.models": {
+      "key": "openrouter.models",
+      "category": "modelList",
+      "source": "https://openrouter.ai/models",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 7,
+      "value": ["anthropic/claude-opus-4-6", "anthropic/claude-sonnet-4-6", "openai/gpt-5.4", "openai/gpt-5.4-mini", "google/gemini-2.5-pro-preview", "deepseek/deepseek-r1"]
+    },
+    "venice.models": {
+      "key": "venice.models",
+      "category": "modelList",
+      "source": "https://docs.venice.ai/api/models",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 7,
+      "value": ["llama-3.3-70b", "llama-3.1-405b", "deepseek-r1-671b", "qwen3-235b", "dolphin-2.9.3", "nous-theta-8b"]
+    },
+    "local.models": {
+      "key": "local.models",
+      "category": "modelList",
+      "source": "https://ollama.com/library",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 14,
+      "value": ["qwen3:8b", "qwen3:4b", "llama3.3:70b", "llama3.1:8b", "gemma3:12b", "mistral:7b", "deepseek-r1:8b", "phi-4:14b"]
+    },
+    "openai.desc": {
+      "key": "openai.desc",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 60,
+      "value": "GPT-5.4, o3/o4 reasoning"
+    },
+    "anthropic.desc": {
+      "key": "anthropic.desc",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 60,
+      "value": "Claude Opus 4.6, Sonnet 4.6"
+    },
+    "openrouter.desc": {
+      "key": "openrouter.desc",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 60,
+      "value": "300+ models, one API key"
+    },
+    "venice.desc": {
+      "key": "venice.desc",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 60,
+      "value": "Privacy-first, uncensored models"
+    },
+    "local.desc": {
+      "key": "local.desc",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 60,
+      "value": "Qwen3, Llama 3.3, Gemma 3"
+    },
+    "openai.keyPlaceholder": {
+      "key": "openai.keyPlaceholder",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "sk-... or paste your key"
+    },
+    "venice.keyPlaceholder": {
+      "key": "venice.keyPlaceholder",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "venice-... or paste your key"
+    }
+  }
+}

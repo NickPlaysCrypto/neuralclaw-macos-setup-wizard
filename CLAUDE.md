@@ -8,9 +8,30 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 - **SetupWizardView.swift** — Root view with page transitions, stepper, progress bar, footer nav
 - **SetupState.swift** — ViewModel managing navigation state, page sequences, per-service API key storage, and configuration saving
 - **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, etc.)
+- **VolatileContent.swift** — `VolatileEntry`, `ContentRegistry` singleton for content that changes over time
 - **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide with inline key entry, provider selection
 - **ModelAndFeaturesSteps.swift** — Model picker, feature toggles with presets
 - **ChannelsAndDoneSteps.swift** — Channel toggles, summary/done page
+
+## VolatileContent System
+Content that is subject to change (API key steps, URLs, model lists, descriptions) uses the `ContentRegistry`:
+
+- **`VolatileContent.swift`** — Core types: `VolatileEntry`, `AnyCodableValue`, `ContentCategory`, `ContentManifest`, `ContentRegistry`
+- **`volatile_defaults.json`** — Bundled JSON manifest with all volatile content, freshness metadata, source URLs, and stale thresholds
+- **Priority**: Remote Feed > Local Cache (`~/.neuralclaw/volatile_content.json`) > Bundled Default > Hardcoded Fallback
+- **Stale thresholds**: 7 days for model lists, 30 days for steps/URLs, 60 days for labels, 90 days for key placeholders
+- **Usage**: `ContentRegistry.shared.getString("google.apiKeyURL", default: "aistudio.google.com/apikey")`
+- **Remote feed**: Stubbed (`fetchRemoteUpdates()`) — not yet implemented
+- All enum properties that consume volatile data have `private var default*` fallbacks so the app always works without a feed
+
+### Volatile Content Categories
+| Category | Examples | Stale After |
+|---|---|---|
+| `steps` | API key creation instructions | 30 days |
+| `url` | API key page URLs | 30 days |
+| `modelList` | Available AI models | 7 days |
+| `label` | Provider descriptions | 60 days |
+| `version` | Version strings | 30 days |
 
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
@@ -47,3 +68,4 @@ This creates `NeuralClawSetup.app` on the Desktop.
 - `stepIcon()`, `stepTitle()`, `stepDesc()` are helper functions (likely in one of the step files)
 - Break complex SwiftUI views into computed properties to avoid "unable to type-check" compiler errors
 - ConsumerAI maps to AIProvider via `.apiProvider` property for key storage
+- `ContentRegistry` is NOT `@MainActor` — it must be accessible from nonisolated enum computed properties

@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // MARK: - Design System
 
@@ -111,8 +112,19 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
         }
     }
 
-    /// URL where users can get an API key
+    /// URL where users can get an API key (volatile — may change)
     var apiKeyURL: String {
+        ContentRegistry.shared.getString("\(rawValue).apiKeyURL", default: defaultAPIKeyURL)
+    }
+
+    /// Step-by-step instructions for getting an API key (volatile — may change)
+    var apiKeySteps: [String] {
+        ContentRegistry.shared.getStrings("\(rawValue).apiKeySteps", default: defaultAPIKeySteps)
+    }
+
+    // MARK: - Hardcoded fallbacks (used when no feed/cache is available)
+
+    private var defaultAPIKeyURL: String {
         switch self {
         case .google:    return "aistudio.google.com/apikey"
         case .openai:    return "platform.openai.com/api-keys"
@@ -120,8 +132,7 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Step-by-step instructions for getting an API key
-    var apiKeySteps: [String] {
+    private var defaultAPIKeySteps: [String] {
         switch self {
         case .google:
             return [
@@ -165,7 +176,12 @@ enum AIProvider: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Provider description (volatile — model names change frequently)
     var desc: String {
+        ContentRegistry.shared.getString("\(rawValue).desc", default: defaultDesc)
+    }
+
+    private var defaultDesc: String {
         switch self {
         case .openai:      return "GPT-5.4, o3/o4 reasoning"
         case .anthropic:   return "Claude Opus 4.6, Sonnet 4.6"
@@ -197,14 +213,24 @@ enum AIProvider: String, CaseIterable, Identifiable {
 
     var needsKey: Bool { self != .local }
 
+    /// Key placeholder text (volatile — key format may change)
     var keyPlaceholder: String {
+        ContentRegistry.shared.getString("\(rawValue).keyPlaceholder", default: defaultKeyPlaceholder)
+    }
+
+    private var defaultKeyPlaceholder: String {
         switch self {
         case .venice:  return "venice-... or paste your key"
         default:       return "sk-... or paste your key"
         }
     }
 
+    /// Available models (volatile — new models release constantly)
     var models: [String] {
+        ContentRegistry.shared.getStrings("\(rawValue).models", default: defaultModels)
+    }
+
+    private var defaultModels: [String] {
         switch self {
         case .openai:
             return ["gpt-5.4", "gpt-5.4-mini", "gpt-5.4-pro", "gpt-5.3-codex",

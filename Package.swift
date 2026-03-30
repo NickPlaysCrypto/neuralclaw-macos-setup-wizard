@@ -12,6 +12,7 @@ let package = Package(
             path: "Sources",
             resources: [
                 .copy("Resources/AppIcon.icns"),
+                .copy("Resources/volatile_defaults.json"),
             ]
         ),
     ]
