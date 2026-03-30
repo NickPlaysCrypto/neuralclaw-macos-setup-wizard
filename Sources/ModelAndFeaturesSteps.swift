@@ -9,6 +9,7 @@ struct APIConfigStep: View {
     @State private var showBioAuth = false
     @State private var bioAuthFailed = false
     @State private var isInstalling = false
+    @State private var installSuccess = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -111,7 +112,80 @@ struct APIConfigStep: View {
                     Color.black.opacity(0.6).ignoresSafeArea()
 
                     VStack(spacing: 16) {
-                        if isInstalling {
+                        if installSuccess {
+                            // ✅ Success — Good Luck!
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [DS.accent3.opacity(0.2), Color(red: 0.18, green: 0.83, blue: 0.75).opacity(0.1)],
+                                            startPoint: .topLeading, endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 56, height: 56)
+                                    .overlay(
+                                        Circle().stroke(DS.accent3.opacity(0.3), lineWidth: 2)
+                                    )
+
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(DS.accent3)
+                            }
+
+                            Text("You're All Set!")
+                                .font(.system(size: 18, weight: .heavy))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [DS.text, DS.accent3],
+                                        startPoint: .leading, endPoint: .trailing
+                                    )
+                                )
+
+                            Text("You can use the agent to do anything\nfrom here! Good Luck!")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(DS.textMuted)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(3)
+
+                            // Summary
+                            HStack(spacing: 10) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: state.provider.icon)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(state.provider.iconColor)
+                                    Text(state.provider.label)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(DS.textMuted)
+                                }
+
+                                Text("·")
+                                    .foregroundColor(DS.textDim)
+
+                                Text(state.selectedModel)
+                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    .foregroundColor(DS.textMuted)
+                            }
+
+                            Button(action: {
+                                NSApplication.shared.terminate(nil)
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 12))
+                                    Text("Close Setup Wizard")
+                                        .font(.system(size: 13, weight: .semibold))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(DS.accentGradient)
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                        } else if isInstalling {
                             // Installing state
                             ProgressView()
                                 .scaleEffect(1.2)
@@ -258,8 +332,9 @@ struct APIConfigStep: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             isInstalling = false
-            showInstallConfirm = false
-            state.goNext() // → done step
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                installSuccess = true
+            }
         }
     }
 }

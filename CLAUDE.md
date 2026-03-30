@@ -3,17 +3,25 @@
 ## Project Overview
 Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built with Swift Package Manager (SPM), not Xcode project files.
 
+**Design Philosophy:** This is a minimal-friction installer — its only job is to gather just enough information to get the user chatting with an AI agent ASAP. The wizard collects a provider + API key + model choice, then immediately closes so the NeuralClaw agent can take over. All other configuration (features, channels, preferences, fallback providers) happens post-install through the agent's chat interface. The wizard should never block the user with unnecessary steps.
+
+**Limitations:** This is a UI-only installer. It does NOT:
+- Launch the NeuralClaw agent or gateway (handled by system launch agents or user action)
+- Make real network requests to validate API keys (stubs only — backend integration pending)
+- Download or install any files (saves config to `~/.neuralclaw/` only)
+- Manage runtime agent state
+
 ## Architecture
 - **App.swift** — App entry point, window configuration, icon loading
 - **SetupWizardView.swift** — Root view with page transitions, stepper, progress bar, footer nav
 - **SetupState.swift** — ViewModel managing navigation state, page sequences, per-service API key storage, and configuration saving
-- **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, etc.)
+- **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, ExtraProvider, etc.)
 - **VolatileContent.swift** — Intelligent content system with urgency, verification, and conditional associations
 - **VOLATILE_CONTENT.md** — **Full developer guide** for the VolatileContent system (read this before building new UI objects)
 - **Resources/volatile_defaults.json** — Bundled JSON manifest of all volatile content with metadata
 - **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide with inline key entry, provider selection
-- **ModelAndFeaturesSteps.swift** — Model picker, feature toggles with presets
-- **ChannelsAndDoneSteps.swift** — Channel toggles, summary/done page
+- **ModelAndFeaturesSteps.swift** — Model picker (final step), install confirmation overlay, biometric auth, feature toggles
+- **ChannelsAndDoneSteps.swift** — Channel toggles, legacy done page (no longer navigated to — success is shown inline on model picker)
 
 ## VolatileContent System (v2)
 
@@ -76,8 +84,9 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
-- **Streamlined flow**: aiUsage → provider/oauth → apiConfig → done (features/channels removed — configurable in agent chat)
+- **Streamlined flow**: aiUsage → provider/oauth → apiConfig (terminal step). No separate "done" page — success is shown inline.
 - **Unified provider list**: First page + APIProviderStep both show the same 5 providers (Gemini, ChatGPT, Claude, OpenRouter, Venice) plus an "Add a Provider" card with 18+ searchable extras
+- **Footer nav hidden on**: aiUsage (has its own buttons), apiConfig (Install button is the action), and done (legacy)
 - Provider list is in a `ScrollView` to handle overflow in the fixed 720×700 window
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
 - `OAuthAvailability.from(_:)` converts string values from the registry to the enum
@@ -87,12 +96,11 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 - **Info popovers**: ⓘ circles on "Get Your API Key" title (explains what an API key is) and "Learn how to get an API key" button (explains when you need one)
 - **File access warning**: ⚠️ amber banner on first page: "NeuralClaw will not have access to any of your device files unless you give it explicit access"
 - **Biometric checkbox**: Touch ID toggle for file access permissions (`SetupState.requireBiometric`, defaults off)
-- **Done step**: saves config, shows "Good Luck!" message, Close button terminates wizard. Does NOT auto-launch any apps
+- **Model picker is terminal**: Select model → "Install with {model}" → confirmation overlay → biometric auth (if enabled) → inline "You're All Set!" success → Close button terminates wizard
 - Page sequence is dynamic based on chosen path
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
 - API Key Guide step features inline SecureField + Save button per provider card with visual feedback
-- **Install confirmation**: After model pick → "Install NeuralClaw with {model} from {provider}?" → biometric auth (if enabled) → save config → done
 
 ## Model Detection Strategy
 When a user saves an API key, the wizard shows a "Detecting provider AI models" overlay. The detection approach varies by provider:

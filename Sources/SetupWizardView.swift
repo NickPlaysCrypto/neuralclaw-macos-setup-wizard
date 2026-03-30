@@ -47,8 +47,8 @@ struct SetupWizardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
 
-                // Footer navigation (hidden on aiUsage and done)
-                if state.currentPage != .aiUsage && state.currentPage != .done {
+                // Footer navigation (hidden on aiUsage, apiConfig, and done)
+                if state.currentPage != .aiUsage && state.currentPage != .apiConfig && state.currentPage != .done {
                     footerNav
                 }
             }
