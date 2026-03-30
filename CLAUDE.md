@@ -9,6 +9,8 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 - **SetupState.swift** — ViewModel managing navigation state, page sequences, per-service API key storage, and configuration saving
 - **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, etc.)
 - **VolatileContent.swift** — Intelligent content system with urgency, verification, and conditional associations
+- **VOLATILE_CONTENT.md** — **Full developer guide** for the VolatileContent system (read this before building new UI objects)
+- **Resources/volatile_defaults.json** — Bundled JSON manifest of all volatile content with metadata
 - **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide with inline key entry, provider selection
 - **ModelAndFeaturesSteps.swift** — Model picker, feature toggles with presets
 - **ChannelsAndDoneSteps.swift** — Channel toggles, summary/done page

@@ -1,6 +1,48 @@
 import Foundation
 
-// MARK: - VolatileContent Core
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MARK: - VolatileContent System
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// PURPOSE:
+//   Any UI content that is subject to change over time (steps, URLs, model
+//   lists, availability status) is wrapped in this system. Entries track their
+//   own freshness, carry instructions for external agents to verify them, and
+//   support conditional associations so one value change cascades to all
+//   related UI elements.
+//
+// ARCHITECTURE:
+//   ┌───────────────────────────────────────────────────────────────────────┐
+//   │  UI Layer (SwiftUI views)                                           │
+//   │    Uses: ContentRegistry.shared.getString("key", default: "...")     │
+//   │    Uses: ContentRegistry.shared.conditionalBool("key", field: "..") │
+//   └──────────────────────────────┬────────────────────────────────────────┘
+//                                  │
+//   ┌──────────────────────────────▼────────────────────────────────────────┐
+//   │  ContentRegistry (singleton)                                         │
+//   │    entries: [String: VolatileEntry]                                  │
+//   │    Loads: Bundled JSON → Local Cache → (Future) Remote Feed          │
+//   │    Priority: Feed > Cache > Bundled Default > Hardcoded Fallback     │
+//   └──────────────────────────────┬────────────────────────────────────────┘
+//                                  │
+//   ┌──────────────────────────────▼────────────────────────────────────────┐
+//   │  Data Sources                                                        │
+//   │    1. Sources/Resources/volatile_defaults.json  (bundled, read-only) │
+//   │    2. ~/.neuralclaw/volatile_content.json       (local cache, r/w)   │
+//   │    3. Remote feed URL                           (future, stubbed)    │
+//   └──────────────────────────────────────────────────────────────────────┘
+//
+// HOW TO ADD A NEW VOLATILE UI ELEMENT:
+//   1. Add key+value to volatile_defaults.json (see VOLATILE_CONTENT.md)
+//   2. Add Swift property: ContentRegistry.shared.getString("key", default: ...)
+//   3. Always keep a private var default* hardcoded fallback
+//   4. If the value drives multiple UI changes, add conditionals
+//   5. If the value needs external verification, add verify instructions
+//
+// KEY NAMING: {provider}.{property}  e.g. "openai.oauthStatus", "google.models"
+//
+// SEE ALSO: VOLATILE_CONTENT.md for the full developer guide
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 /// A wrapper that marks content as subject to change over time.
 /// Entries know their urgency, carry verification instructions,
