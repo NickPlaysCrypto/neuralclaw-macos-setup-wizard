@@ -24,9 +24,11 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 Content that changes over time is managed by `ContentRegistry` — an intelligent system that tracks freshness, carries verification instructions, and resolves conditional UI associations.
 
 ### Core Types
-- **`VolatileEntry`** — Wraps any content with metadata: category, source, `lastVerified`, `staleAfterDays`, verify instructions, and conditionals
+- **`VolatileEntry`** — Wraps any content with metadata: category, source, `lastVerified`, `staleAfterDays`, verify instructions, conditionals, feedQuality, lastMetaTagCount
 - **`ContentUrgency`** — Five-level gradient: `fresh → aging → stale → expired → critical`
+- **`FeedQuality`** — Five-tier data source ranking: `🥇 goldAPI → 🥈 structured → 🥉 scraped → 🔧 manual → 💀 disconnected`
 - **`VerifyInstructions`** — HOW to check if content is still accurate (checkURL, webSearch, apiProbe, manual)
+- **`MetaTag`** / **`MetaTagStore`** — Agent-generated timestamped annotations stored in `~/.neuralclaw/meta_tags.json`
 - **`AnyCodableValue`** — Type-erased JSON: string, strings, int, bool, null
 - **`ContentCategory`** — steps, url, modelList, version, label, status
 
@@ -44,8 +46,14 @@ One value change cascades to all associated UI. Example:
 ```
 Access: `ContentRegistry.shared.conditionalString("openai.oauthStatus", field: "subtitle", default: "...")`
 
-### Verification Queue
-External agents (AI) read `ContentRegistry.shared.verificationQueue` for a priority-ordered list of entries needing checking. Each entry carries `VerifyInstructions` describing the method (checkURL, webSearch, etc.), target URL, keywords to look for, and fallback strategies.
+### Agent Queues
+- **`verificationQueue`** — Entries needing verification, most urgent first (with verify instructions)
+- **`sourceUpgradeQueue`** — Entries needing better data feeds, worst quality first
+- **`keysWithNewTags`** — Entries with unread meta-tag annotations
+- **`systemDiagnostic`** — One-line health: `Happiness: 62% | Freshness: 🟢 15 fresh | Feeds: 🥇 2 gold`
+
+### Meta-Tags (Agent Annotations)
+Agents write timestamped notes to any entry via `MetaTagStore.shared.add(key:agent:type:content:)`. Types: `observation`, `correction`, `sourceFound`, `sourceDown`, `warning`, `context`. Entries track `lastMetaTagCount` so agents can detect unread annotations via `hasNewTags(for:)`.
 
 ### Priority Chain
 ```
