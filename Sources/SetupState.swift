@@ -17,6 +17,15 @@ class SetupState: ObservableObject {
     @Published var selectedModel: String = "gpt-5.4"
     @Published var fallback: String = ""
 
+    // MARK: - Per-service API keys (consumer path)
+    @Published var serviceAPIKeys: [ConsumerAI: String] = [:]
+    @Published var savedServiceKeys: Set<ConsumerAI> = []
+
+    func saveServiceKey(_ service: ConsumerAI) {
+        guard let key = serviceAPIKeys[service], !key.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        savedServiceKeys.insert(service)
+    }
+
     // MARK: - Features
     @Published var preset: FeaturePreset = .recommended
     @Published var features: [Feature] = SetupState.defaultFeatures()
@@ -151,6 +160,10 @@ class SetupState: ObservableObject {
         let config = buildTOML()
         let key = apiKey
         let providerRaw = provider.rawValue
+        let perServiceKeys = savedServiceKeys.compactMap { svc -> (String, String)? in
+            guard let k = serviceAPIKeys[svc], !k.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+            return (svc.apiProvider.rawValue, k)
+        }
 
         DispatchQueue.global(qos: .userInitiated).async {
             let home = FileManager.default.homeDirectoryForCurrentUser
@@ -159,9 +172,21 @@ class SetupState: ObservableObject {
             let configFile = configDir.appendingPathComponent("config.toml")
             try? config.write(to: configFile, atomically: true, encoding: .utf8)
 
+            // Build secrets content from both single key and per-service keys
+            var secretLines: [String] = []
             if !key.isEmpty {
+                secretLines.append("\(providerRaw)_api_key = \"\(key)\"")
+            }
+            for (providerID, serviceKey) in perServiceKeys {
+                let line = "\(providerID)_api_key = \"\(serviceKey)\""
+                if !secretLines.contains(line) {
+                    secretLines.append(line)
+                }
+            }
+
+            if !secretLines.isEmpty {
                 let secretsFile = configDir.appendingPathComponent(".secrets.toml")
-                let secretContent = "\(providerRaw)_api_key = \"\(key)\"\n"
+                let secretContent = secretLines.joined(separator: "\n") + "\n"
                 try? secretContent.write(to: secretsFile, atomically: true, encoding: .utf8)
                 try? FileManager.default.setAttributes(
                     [.posixPermissions: 0o600], ofItemAtPath: secretsFile.path)

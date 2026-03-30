@@ -417,7 +417,7 @@ struct APIKeyGuideStep: View {
         VStack(alignment: .leading, spacing: 0) {
             stepIcon("key.viewfinder")
             stepTitle("Get Your API Key")
-            stepDesc("Follow these steps to create an API key for your provider. You'll paste it on the next screen.")
+            stepDesc("Follow these steps to create an API key for your provider, then paste it below.")
 
             ScrollView {
                 VStack(spacing: 14) {
@@ -442,6 +442,21 @@ struct APIKeyGuideStep: View {
             }
             .frame(maxHeight: .infinity)
 
+            // Footer hint
+            HStack {
+                Spacer()
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 12))
+                    Text("You can always add more providers later!")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .foregroundColor(DS.textMuted)
+                Spacer()
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 4)
+
             Spacer()
         }
         .padding(.horizontal, 40)
@@ -451,7 +466,24 @@ struct APIKeyGuideStep: View {
 
 struct APIKeyGuideCard: View {
     let service: ConsumerAI
+    @EnvironmentObject var state: SetupState
     @State private var isExpanded = true
+    @State private var showSavedCheck = false
+
+    private var keyBinding: Binding<String> {
+        Binding(
+            get: { state.serviceAPIKeys[service] ?? "" },
+            set: { state.serviceAPIKeys[service] = $0 }
+        )
+    }
+
+    private var isSaved: Bool {
+        state.savedServiceKeys.contains(service)
+    }
+
+    private var hasKey: Bool {
+        !(state.serviceAPIKeys[service] ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -475,9 +507,23 @@ struct APIKeyGuideCard: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(service.productName) API Key")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(DS.text)
+                        HStack(spacing: 8) {
+                            Text("\(service.productName) API Key")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(DS.text)
+
+                            if isSaved {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 10))
+                                    Text("Saved")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .tracking(0.3)
+                                }
+                                .foregroundColor(DS.accent3)
+                                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                            }
+                        }
 
                         Text(service.apiKeyURL)
                             .font(.system(size: 11, design: .monospaced))
@@ -494,41 +540,134 @@ struct APIKeyGuideCard: View {
             .buttonStyle(.plain)
             .padding(14)
 
-            // Steps
+            // Steps + key input
             if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(service.apiKeySteps.enumerated()), id: \.offset) { idx, step in
-                        HStack(alignment: .top, spacing: 10) {
-                            // Step number
-                            ZStack {
-                                Circle()
-                                    .fill(DS.accent.opacity(0.12))
-                                    .frame(width: 22, height: 22)
-                                Text("\(idx + 1)")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(DS.accent)
-                            }
+                VStack(alignment: .leading, spacing: 12) {
+                    // Instruction steps
+                    stepsView
 
-                            Text(step)
-                                .font(.system(size: 13))
-                                .foregroundColor(DS.text)
-                                .lineSpacing(2)
-                        }
-                    }
+                    // Divider
+                    Rectangle()
+                        .fill(DS.border)
+                        .frame(height: 1)
+                        .padding(.vertical, 4)
+
+                    // API key input + save button
+                    keyInputRow
                 }
                 .padding(.horizontal, 14)
                 .padding(.bottom, 14)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.black.opacity(0.15))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(DS.border, lineWidth: 1)
-                )
-        )
+        .background(cardBackground)
+        .animation(.easeInOut(duration: 0.2), value: isSaved)
+    }
+
+    private var stepsView: some View {
+        ForEach(Array(service.apiKeySteps.enumerated()), id: \.offset) { idx, step in
+            HStack(alignment: .top, spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(DS.accent.opacity(0.12))
+                        .frame(width: 22, height: 22)
+                    Text(String(idx + 1))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(DS.accent)
+                }
+
+                Text(step)
+                    .font(.system(size: 13))
+                    .foregroundColor(DS.text)
+                    .lineSpacing(2)
+            }
+        }
+    }
+
+    private var keyInputRow: some View {
+        HStack(spacing: 10) {
+            // Text field
+            HStack(spacing: 8) {
+                Image(systemName: "key.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(isSaved ? DS.accent3 : DS.textDim)
+
+                SecureField("Paste your \(service.productName) API key…", text: keyBinding)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundColor(DS.text)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.black.opacity(0.25))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(fieldBorderColor, lineWidth: 1)
+                    )
+            )
+
+            // Save button
+            saveButton
+        }
+    }
+
+    private var fieldBorderColor: Color {
+        if isSaved { return DS.accent3.opacity(0.4) }
+        if hasKey { return DS.accent.opacity(0.3) }
+        return DS.border.opacity(1)
+    }
+
+    private var saveButtonBG: Color {
+        if isSaved { return DS.accent3.opacity(0.12) }
+        if hasKey { return DS.accent.opacity(0.8) }
+        return Color.white.opacity(0.06)
+    }
+
+    private var saveButton: some View {
+        Button(action: {
+            state.saveServiceKey(service)
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showSavedCheck = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { showSavedCheck = false }
+            }
+        }) {
+            HStack(spacing: 5) {
+                Image(systemName: isSaved ? "checkmark" : "square.and.arrow.down")
+                    .font(.system(size: 11, weight: .semibold))
+                Text(isSaved ? "Saved" : "Save")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundColor(isSaved ? DS.accent3 : .white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(saveButtonBG)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(
+                                isSaved ? DS.accent3.opacity(0.25) : Color.clear,
+                                lineWidth: 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(!hasKey)
+        .opacity(hasKey || isSaved ? 1 : 0.4)
+    }
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: 14)
+            .fill(Color.black.opacity(0.15))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isSaved ? DS.accent3.opacity(0.25) : DS.border, lineWidth: 1)
+            )
     }
 }
 

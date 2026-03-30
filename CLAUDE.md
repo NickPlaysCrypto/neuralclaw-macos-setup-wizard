@@ -6,9 +6,9 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 ## Architecture
 - **App.swift** — App entry point, window configuration, icon loading
 - **SetupWizardView.swift** — Root view with page transitions, stepper, progress bar, footer nav
-- **SetupState.swift** — ViewModel managing navigation state, page sequences, and configuration saving
+- **SetupState.swift** — ViewModel managing navigation state, page sequences, per-service API key storage, and configuration saving
 - **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, etc.)
-- **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide, provider selection
+- **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide with inline key entry, provider selection
 - **ModelAndFeaturesSteps.swift** — Model picker, feature toggles with presets
 - **ChannelsAndDoneSteps.swift** — Channel toggles, summary/done page
 
@@ -16,7 +16,9 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
 - Page sequence is dynamic based on chosen path
-- Config saves to `~/.neuralclaw/config.toml`
+- Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
+- Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
+- API Key Guide step features inline SecureField + Save button per provider card with visual feedback (green glow, ✓ badge)
 
 ## Build & Run
 ```bash
@@ -43,3 +45,5 @@ This creates `NeuralClawSetup.app` on the Desktop.
 - Minimum macOS 13
 - Window is fixed size 720x620 with hidden title bar
 - `stepIcon()`, `stepTitle()`, `stepDesc()` are helper functions (likely in one of the step files)
+- Break complex SwiftUI views into computed properties to avoid "unable to type-check" compiler errors
+- ConsumerAI maps to AIProvider via `.apiProvider` property for key storage
