@@ -196,6 +196,7 @@ struct OAuthInfoStep: View {
     @State private var showManualPicker = false
     @State private var detectionProgress: Double = 0.0
     @State private var clickedNo = false
+    @State private var detectionFailed = false
 
     // Volatile content: title and subtitle can be updated externally
     private var panelTitle: String {
@@ -385,6 +386,60 @@ struct OAuthInfoStep: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.top, 4)
+                            }
+                            .padding(24)
+                        } else if detectionFailed {
+                            // Detection timed out — show error + manual option
+                            VStack(spacing: 14) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(Color(red: 0.95, green: 0.65, blue: 0.20))
+
+                                Text("Sorry, we could not match that API key to a provider. Please make sure you have the right key, and/or attempt to find the provider.")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(DS.textMuted)
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(2)
+
+                                HStack(spacing: 10) {
+                                    Button(action: {
+                                        detectionFailed = false
+                                        showManualPicker = true
+                                    }) {
+                                        Text("Select Provider")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(DS.accent)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button(action: {
+                                        showDetection = false
+                                        detectionFailed = false
+                                        apiKeySaved = false
+                                        detectionProgress = 0.0
+                                    }) {
+                                        Text("Dismiss")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(DS.textMuted)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.white.opacity(0.06))
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .stroke(DS.border, lineWidth: 1)
+                                                    )
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
                             }
                             .padding(24)
                         } else {
@@ -647,7 +702,7 @@ struct OAuthInfoStep: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
                         // Only timeout if still detecting (no provider found, not manually picking)
                         if showDetection && detectedProvider == nil && !showManualPicker {
-                            showManualPicker = true
+                            detectionFailed = true
                         }
                     }
                 }) {
