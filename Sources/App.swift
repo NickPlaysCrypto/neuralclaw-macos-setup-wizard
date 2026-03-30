@@ -20,6 +20,12 @@ class SetupAppDelegate: NSObject, NSApplicationDelegate {
         // Standard windowed app — show in dock
         NSApp.setActivationPolicy(.regular)
 
+        // Set app icon from bundled resource
+        if let iconURL = Bundle.module.url(forResource: "AppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: iconURL) {
+            NSApp.applicationIconImage = icon
+        }
+
         // Center the window on screen
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             if let window = NSApp.windows.first {
