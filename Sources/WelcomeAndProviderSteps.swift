@@ -8,6 +8,7 @@ struct AIUsageStep: View {
     @State private var cardsOffset: CGFloat = 20
     @State private var showProviderSearch = false
     @State private var searchText = ""
+    @State private var showNewUserInfo = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -219,27 +220,53 @@ struct AIUsageStep: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button(action: state.chooseNewUserPath) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "person.badge.plus")
-                                .font(.system(size: 14))
-                                .foregroundColor(DS.accent2)
-                            Text("I've never used AI")
-                                .font(.system(size: 13, weight: .semibold))
+                    ZStack(alignment: .topTrailing) {
+                        Button(action: state.chooseNewUserPath) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "person.badge.plus")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(DS.accent2)
+                                Text("I've never used AI")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
+                            .foregroundColor(DS.text)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.04))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(DS.accent2.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
                         }
-                        .foregroundColor(DS.text)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.04))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(DS.accent2.opacity(0.3), lineWidth: 1)
-                                )
-                        )
+                        .buttonStyle(.plain)
+
+                        Button(action: { showNewUserInfo.toggle() }) {
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.system(size: 15))
+                                .foregroundColor(DS.textDim)
+                        }
+                        .buttonStyle(.plain)
+                        .offset(x: 6, y: -6)
+                        .popover(isPresented: $showNewUserInfo, arrowEdge: .bottom) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("New to AI?")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+
+                                Text("Choose this option if you have no AI subscriptions, or have never used AI. NeuralClaw will provide your AI intelligence using basic models at no cost.")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .lineSpacing(2)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(14)
+                            .frame(width: 280)
+                            .background(Color(red: 0.12, green: 0.13, blue: 0.18))
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 40)
