@@ -77,10 +77,13 @@ Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON >
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
 - Provider panel titled "Select Your Intelligence Provider" — title/subtitle are volatile content objects
+- Provider list is in a `ScrollView` to handle overflow in the fixed 720×620 window
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
 - `OAuthAvailability.from(_:)` converts string values from the registry to the enum
 - `ConsumerAI.oauthSubtitle`, `.oauthButtonEnabled`, `.oauthBadge` resolve from conditionals
 - **Local Models** option: checkbox toggle for Ollama support (`SetupState.wantsLocalModel`)
+- **Inline API Key** input: SecureField + Save button on the provider panel (`SetupState.directAPIKey`)
+- **Info popovers**: ⓘ circles on "Get Your API Key" title (explains what an API key is) and "Learn how to get an API key" button (explains when you need one)
 - Page sequence is dynamic based on chosen path
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
