@@ -46,6 +46,70 @@ struct AIUsageStep: View {
             .opacity(headerOpacity)
             .padding(.horizontal, 40)
 
+            // File access warning
+            HStack(spacing: 8) {
+                Text("⚠️")
+                    .font(.system(size: 14))
+
+                Text("NeuralClaw will not have access to any of your device files unless you give it explicit access")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(red: 0.95, green: 0.75, blue: 0.30))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("⚠️")
+                    .font(.system(size: 14))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.95, green: 0.75, blue: 0.30).opacity(0.06))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color(red: 0.95, green: 0.75, blue: 0.30).opacity(0.2), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 40)
+            .padding(.top, 16)
+            .opacity(headerOpacity)
+
+            // Biometric checkbox
+            Button(action: { state.requireBiometric.toggle() }) {
+                HStack(spacing: 10) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(state.requireBiometric ? DS.accent : Color.clear)
+                            .frame(width: 18, height: 18)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(state.requireBiometric ? DS.accent : DS.border, lineWidth: 1.5)
+                            )
+
+                        if state.requireBiometric {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "touchid")
+                            .font(.system(size: 13))
+                            .foregroundColor(DS.accent)
+
+                        Text("Require biometric fingerprint authentication for all file access permissions")
+                            .font(.system(size: 12))
+                            .foregroundColor(DS.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 40)
+            .padding(.top, 10)
+            .opacity(headerOpacity)
+
             Spacer()
 
             // Bottom actions
