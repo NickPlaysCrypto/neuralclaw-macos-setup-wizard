@@ -187,6 +187,9 @@ struct ConsumerAICard: View {
 struct OAuthInfoStep: View {
     @EnvironmentObject var state: SetupState
     @State private var localModelHovered = false
+    @State private var apiKeyHovered = false
+    @State private var directAPIKey = ""
+    @State private var apiKeySaved = false
 
     // Volatile content: title and subtitle can be updated externally
     private var panelTitle: String {
@@ -223,8 +226,11 @@ struct OAuthInfoStep: View {
                 // Local models option
                 localModelRow
 
+                // Direct API key input
+                apiKeyRow
+
                 // If nothing is selected (shouldn't happen, but safety)
-                if state.selectedServices.isEmpty {
+                if state.selectedServices.isEmpty && directAPIKey.isEmpty {
                     Text("No services selected.")
                         .font(.system(size: 14))
                         .foregroundColor(DS.textMuted)
@@ -332,6 +338,113 @@ struct OAuthInfoStep: View {
         }
         .buttonStyle(.plain)
         .onHover { localModelHovered = $0 }
+    }
+
+    // MARK: - API Key Row
+
+    private var apiKeyRow: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                // Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.85, green: 0.55, blue: 0.20).opacity(0.15),
+                                    Color(red: 0.95, green: 0.75, blue: 0.30).opacity(0.15)
+                                ],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color(red: 0.85, green: 0.65, blue: 0.25))
+                }
+
+                // Label
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("API Key")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(DS.text)
+                    Text("Paste a key from any provider")
+                        .font(.system(size: 12))
+                        .foregroundColor(DS.textMuted)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            // Input field
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(DS.textDim)
+
+                    SecureField("sk-...", text: $directAPIKey)
+                        .font(.system(size: 13, design: .monospaced))
+                        .textFieldStyle(.plain)
+                        .foregroundColor(DS.text)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.black.opacity(0.25))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(DS.border, lineWidth: 1)
+                        )
+                )
+
+                // Save button
+                Button(action: {
+                    guard !directAPIKey.isEmpty else { return }
+                    state.directAPIKey = directAPIKey
+                    apiKeySaved = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        apiKeySaved = false
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: apiKeySaved ? "checkmark.circle.fill" : "square.and.arrow.down")
+                            .font(.system(size: 12))
+                        Text(apiKeySaved ? "Saved" : "Save")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundColor(apiKeySaved ? .green : (directAPIKey.isEmpty ? DS.textDim : DS.accent))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.black.opacity(0.2))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(apiKeySaved ? Color.green.opacity(0.3) : DS.border, lineWidth: 1)
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(directAPIKey.isEmpty)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 14)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(apiKeyHovered ? DS.surfaceHover : Color.black.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(!directAPIKey.isEmpty ? DS.accent.opacity(0.4) : DS.border, lineWidth: 1)
+                )
+        )
+        .onHover { apiKeyHovered = $0 }
     }
 }
 

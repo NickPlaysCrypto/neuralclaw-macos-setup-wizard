@@ -11,6 +11,7 @@ class SetupState: ObservableObject {
     // MARK: - AI Usage (page 1)
     @Published var selectedServices: Set<ConsumerAI> = []
     @Published var wantsLocalModel: Bool = false
+    @Published var directAPIKey: String = ""
 
     // MARK: - Provider / API config
     @Published var provider: AIProvider = .openai
