@@ -980,6 +980,10 @@ struct OAuthServiceRow: View {
 struct APIKeyGuideStep: View {
     @EnvironmentObject var state: SetupState
     @State private var showAPIInfo = false
+    @State private var showModelDetection = false
+    @State private var modelDetectionProgress: Double = 0.0
+    @State private var modelDetectionFailed = false
+    @State private var detectingService: ConsumerAI? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1018,10 +1022,43 @@ struct APIKeyGuideStep: View {
             ScrollView {
                 VStack(spacing: 14) {
                     ForEach(Array(state.selectedServices.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { service in
-                        APIKeyGuideCard(service: service)
+                        APIKeyGuideCard(service: service, onKeySaved: { savedService in
+                            detectingService = savedService
+                            modelDetectionFailed = false
+                            modelDetectionProgress = 0.0
+                            showModelDetection = true
+
+                            // Also set the provider on state so model picker knows
+                            state.selectProvider(savedService.apiProvider)
+
+                            // 10s timeout
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                                if showModelDetection && !modelDetectionFailed {
+                                    // Simulate: check if provider has models
+                                    let providerModels = state.provider.models
+                                    if !providerModels.isEmpty {
+                                        // Models detected — navigate to apiConfig
+                                        showModelDetection = false
+                                        state.goNext()
+                                    } else {
+                                        modelDetectionFailed = true
+                                    }
+                                }
+                            }
+
+                            // Simulate quick detection for known providers
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                if showModelDetection && !modelDetectionFailed {
+                                    let providerModels = state.provider.models
+                                    if !providerModels.isEmpty {
+                                        showModelDetection = false
+                                        state.goNext()
+                                    }
+                                }
+                            }
+                        })
                     }
 
-                    // If they somehow have no services selected
                     if state.selectedServices.isEmpty {
                         VStack(spacing: 8) {
                             Image(systemName: "arrow.backward.circle")
@@ -1057,11 +1094,107 @@ struct APIKeyGuideStep: View {
         }
         .padding(.horizontal, 40)
         .padding(.top, 32)
+        .overlay {
+            if showModelDetection {
+                ZStack {
+                    Color.black.opacity(0.6).ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        if modelDetectionFailed {
+                            // Failed state
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(Color(red: 0.95, green: 0.65, blue: 0.20))
+
+                            Text("No models detected. Check the API key or pick a different provider.")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(DS.textMuted)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+
+                            Button(action: {
+                                showModelDetection = false
+                                modelDetectionFailed = false
+                            }) {
+                                Text("Close")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 28)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(DS.accent)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            // Detecting state
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(Color.white.opacity(0.08))
+                                        .frame(height: 6)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [DS.accent, Color(red: 0.55, green: 0.35, blue: 0.85)],
+                                                startPoint: .leading, endPoint: .trailing
+                                            )
+                                        )
+                                        .frame(width: geo.size.width * modelDetectionProgress, height: 6)
+                                }
+                            }
+                            .frame(height: 6)
+
+                            Text("Detecting provider AI models")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(DS.text)
+                                .multilineTextAlignment(.center)
+
+                            if let svc = detectingService {
+                                HStack(spacing: 6) {
+                                    Image(systemName: svc.icon)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(svc.iconColor)
+                                    Text(svc.productName)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(DS.textMuted)
+                                }
+                            }
+
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .tint(DS.textMuted)
+                        }
+                    }
+                    .padding(28)
+                    .frame(width: 320)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.10, green: 0.11, blue: 0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(DS.border, lineWidth: 1)
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                    )
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showModelDetection)
+                .onAppear {
+                    withAnimation(.linear(duration: 10)) {
+                        modelDetectionProgress = 1.0
+                    }
+                }
+            }
+        }
     }
 }
 
 struct APIKeyGuideCard: View {
     let service: ConsumerAI
+    var onKeySaved: ((ConsumerAI) -> Void)? = nil
     @EnvironmentObject var state: SetupState
     @State private var isExpanded = true
     @State private var showSavedCheck = false
@@ -1226,6 +1359,9 @@ struct APIKeyGuideCard: View {
             state.saveServiceKey(service)
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 showSavedCheck = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                onKeySaved?(service)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation { showSavedCheck = false }
