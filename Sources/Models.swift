@@ -54,7 +54,17 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Product name (volatile — providers rebrand, e.g. Bard → Gemini)
     var productName: String {
+        ContentRegistry.shared.getString("\(rawValue).productName", default: defaultProductName)
+    }
+
+    /// Company name (volatile — very low churn but still tracked)
+    var companyName: String {
+        ContentRegistry.shared.getString("\(rawValue).companyName", default: defaultCompanyName)
+    }
+
+    private var defaultProductName: String {
         switch self {
         case .google:    return "Gemini"
         case .openai:    return "ChatGPT"
@@ -62,7 +72,7 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
         }
     }
 
-    var companyName: String {
+    private var defaultCompanyName: String {
         switch self {
         case .google:    return "Google"
         case .openai:    return "OpenAI"
@@ -94,12 +104,39 @@ enum ConsumerAI: String, CaseIterable, Identifiable {
         }
     }
 
-    /// OAuth availability status for this service
+    /// OAuth availability status (volatile — providers may add/remove OAuth support)
     var oauthStatus: OAuthAvailability {
+        let statusStr = ContentRegistry.shared.getString("\(rawValue).oauthStatus", default: defaultOAuthStatus)
+        return OAuthAvailability.from(statusStr)
+    }
+
+    /// Subtitle text for the OAuth row, resolved from conditionals
+    var oauthSubtitle: String {
+        ContentRegistry.shared.conditionalString(
+            "\(rawValue).oauthStatus", field: "subtitle",
+            default: "Sign in with \(companyName) account"
+        )
+    }
+
+    /// Whether the Log In button should be enabled, from conditionals
+    var oauthButtonEnabled: Bool {
+        ContentRegistry.shared.conditionalBool(
+            "\(rawValue).oauthStatus", field: "buttonEnabled", default: oauthStatus == .available
+        )
+    }
+
+    /// Badge text ("Coming Soon", "Unavailable", or nil), from conditionals
+    var oauthBadge: String? {
+        let val = ContentRegistry.shared.conditional("\(rawValue).oauthStatus", field: "badge")
+        if val?.isNull == true { return nil }
+        return val?.asString ?? oauthStatus.label
+    }
+
+    private var defaultOAuthStatus: String {
         switch self {
-        case .google:    return .available     // Google OAuth works
-        case .openai:    return .comingSoon    // Expected in the future
-        case .anthropic: return .unavailable   // Against TOS
+        case .google:    return "available"
+        case .openai:    return "comingSoon"
+        case .anthropic: return "unavailable"
         }
     }
 
@@ -300,6 +337,16 @@ enum OAuthAvailability {
     case available      // OAuth login is ready to use
     case comingSoon     // Expected to become available
     case unavailable    // Not possible (e.g. against provider TOS)
+
+    /// Construct from a string value (as stored in volatile content registry)
+    static func from(_ string: String) -> OAuthAvailability {
+        switch string.lowercased() {
+        case "available":   return .available
+        case "comingsoon":  return .comingSoon
+        case "unavailable": return .unavailable
+        default:            return .unavailable
+        }
+    }
 
     var label: String {
         switch self {

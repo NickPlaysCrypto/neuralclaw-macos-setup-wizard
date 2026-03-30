@@ -1,14 +1,227 @@
 {
-  "version": 1,
+  "version": 2,
   "generated": "2026-03-29T21:00:00Z",
   "content": {
+    "google.productName": {
+      "key": "google.productName",
+      "category": "label",
+      "source": "https://ai.google.dev",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "Gemini",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://ai.google.dev",
+        "lookFor": ["Gemini"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": "webSearch",
+        "searchQuery": "Google AI product name 2026",
+        "notes": "Google has rebranded before (Bard → Gemini). Check if still called Gemini."
+      },
+      "conditionals": null,
+      "affects": null
+    },
+    "openai.productName": {
+      "key": "openai.productName",
+      "category": "label",
+      "source": "https://openai.com",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "ChatGPT",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://openai.com",
+        "lookFor": ["ChatGPT"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": "Verify OpenAI's consumer product is still called ChatGPT"
+      },
+      "conditionals": null,
+      "affects": null
+    },
+    "anthropic.productName": {
+      "key": "anthropic.productName",
+      "category": "label",
+      "source": "https://anthropic.com",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 90,
+      "value": "Claude",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
+    },
+    "google.companyName": {
+      "key": "google.companyName",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 365,
+      "value": "Google",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
+    },
+    "openai.companyName": {
+      "key": "openai.companyName",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 365,
+      "value": "OpenAI",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
+    },
+    "anthropic.companyName": {
+      "key": "anthropic.companyName",
+      "category": "label",
+      "source": null,
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 365,
+      "value": "Anthropic",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
+    },
+    "google.oauthStatus": {
+      "key": "google.oauthStatus",
+      "category": "status",
+      "source": "https://developers.google.com/identity/protocols/oauth2",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": "available",
+      "verify": {
+        "method": "manual",
+        "url": null,
+        "lookFor": null,
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": "Google OAuth is well-established. Verify our integration still works."
+      },
+      "conditionals": {
+        "available": {
+          "subtitle": "Sign in with Google account",
+          "badge": null,
+          "buttonEnabled": true,
+          "buttonLabel": "Log In"
+        },
+        "comingSoon": {
+          "subtitle": "Sign in with Google account",
+          "badge": "Coming Soon",
+          "buttonEnabled": false,
+          "buttonLabel": "Log In"
+        },
+        "unavailable": {
+          "subtitle": "Not available via login",
+          "badge": "Unavailable",
+          "buttonEnabled": false,
+          "buttonLabel": null
+        }
+      },
+      "affects": null
+    },
+    "openai.oauthStatus": {
+      "key": "openai.oauthStatus",
+      "category": "status",
+      "source": "https://platform.openai.com/docs/guides/authentication",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 14,
+      "value": "comingSoon",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://platform.openai.com/docs/guides/authentication",
+        "lookFor": ["OAuth", "oauth2", "Sign in with OpenAI", "authorization_code"],
+        "onFound": "available",
+        "onNotFound": null,
+        "fallbackMethod": "webSearch",
+        "searchQuery": "OpenAI OAuth API third-party authentication 2026",
+        "notes": "OpenAI has hinted at OAuth support. Check if they've shipped it."
+      },
+      "conditionals": {
+        "available": {
+          "subtitle": "Sign in with OpenAI account",
+          "badge": null,
+          "buttonEnabled": true,
+          "buttonLabel": "Log In"
+        },
+        "comingSoon": {
+          "subtitle": "Sign in with OpenAI account",
+          "badge": "Coming Soon",
+          "buttonEnabled": false,
+          "buttonLabel": "Log In"
+        },
+        "unavailable": {
+          "subtitle": "Not available via login",
+          "badge": "Unavailable",
+          "buttonEnabled": false,
+          "buttonLabel": null
+        }
+      },
+      "affects": null
+    },
+    "anthropic.oauthStatus": {
+      "key": "anthropic.oauthStatus",
+      "category": "status",
+      "source": "https://docs.anthropic.com/en/api/getting-started",
+      "lastVerified": "2026-03-29T00:00:00Z",
+      "staleAfterDays": 30,
+      "value": "unavailable",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://docs.anthropic.com/en/api/getting-started",
+        "lookFor": ["OAuth", "oauth", "Sign in"],
+        "onFound": "available",
+        "onNotFound": null,
+        "fallbackMethod": "webSearch",
+        "searchQuery": "Anthropic Claude OAuth API login third-party 2026",
+        "notes": "Anthropic currently only supports API keys. OAuth is against their TOS model. Check if policy changed."
+      },
+      "conditionals": {
+        "available": {
+          "subtitle": "Sign in with Anthropic account",
+          "badge": null,
+          "buttonEnabled": true,
+          "buttonLabel": "Log In"
+        },
+        "comingSoon": {
+          "subtitle": "Sign in with Anthropic account",
+          "badge": "Coming Soon",
+          "buttonEnabled": false,
+          "buttonLabel": "Log In"
+        },
+        "unavailable": {
+          "subtitle": "Not available via login",
+          "badge": "Unavailable",
+          "buttonEnabled": false,
+          "buttonLabel": null
+        }
+      },
+      "affects": null
+    },
     "google.apiKeyURL": {
       "key": "google.apiKeyURL",
       "category": "url",
       "source": "https://aistudio.google.com/apikey",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 30,
-      "value": "aistudio.google.com/apikey"
+      "value": "aistudio.google.com/apikey",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://aistudio.google.com/apikey",
+        "lookFor": ["API key", "api key", "Get API key"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": "webSearch",
+        "searchQuery": "Google Gemini API key creation page 2026",
+        "notes": "Verify this URL still leads to the API key creation page"
+      },
+      "conditionals": null,
+      "affects": null
     },
     "google.apiKeySteps": {
       "key": "google.apiKeySteps",
@@ -21,7 +234,19 @@
         "Sign in with your Google account",
         "Click \"Get API key\" in the sidebar",
         "Create a new key and copy it"
-      ]
+      ],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://aistudio.google.com/apikey",
+        "lookFor": ["Get API key", "Create API key"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": "Visit the actual page and verify the UI flow matches these steps"
+      },
+      "conditionals": null,
+      "affects": null
     },
     "openai.apiKeyURL": {
       "key": "openai.apiKeyURL",
@@ -29,7 +254,19 @@
       "source": "https://platform.openai.com/api-keys",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 30,
-      "value": "platform.openai.com/api-keys"
+      "value": "platform.openai.com/api-keys",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://platform.openai.com/api-keys",
+        "lookFor": ["API keys", "Create new secret key"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": null
+      },
+      "conditionals": null,
+      "affects": null
     },
     "openai.apiKeySteps": {
       "key": "openai.apiKeySteps",
@@ -42,7 +279,19 @@
         "Sign in or create an account",
         "Navigate to API Keys in Settings",
         "Click \"Create new secret key\""
-      ]
+      ],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://platform.openai.com/api-keys",
+        "lookFor": ["Create new secret key", "API keys"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": "Visit the page and verify the UI flow matches these steps"
+      },
+      "conditionals": null,
+      "affects": null
     },
     "anthropic.apiKeyURL": {
       "key": "anthropic.apiKeyURL",
@@ -50,7 +299,19 @@
       "source": "https://console.anthropic.com/settings/keys",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 30,
-      "value": "console.anthropic.com/settings/keys"
+      "value": "console.anthropic.com/settings/keys",
+      "verify": {
+        "method": "checkURL",
+        "url": "https://console.anthropic.com/settings/keys",
+        "lookFor": ["API Keys", "Create Key"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": null
+      },
+      "conditionals": null,
+      "affects": null
     },
     "anthropic.apiKeySteps": {
       "key": "anthropic.apiKeySteps",
@@ -63,7 +324,19 @@
         "Sign in or create an account",
         "Go to Settings → API Keys",
         "Click \"Create Key\" and copy it"
-      ]
+      ],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://console.anthropic.com/settings/keys",
+        "lookFor": ["Create Key", "API Keys"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": null
+      },
+      "conditionals": null,
+      "affects": null
     },
     "openai.models": {
       "key": "openai.models",
@@ -71,7 +344,19 @@
       "source": "https://platform.openai.com/docs/models",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 7,
-      "value": ["gpt-5.4", "gpt-5.4-mini", "gpt-5.4-pro", "gpt-5.3-codex", "gpt-5.2", "o4-mini", "o3", "o3-pro", "gpt-4.1", "gpt-4.1-mini"]
+      "value": ["gpt-5.4", "gpt-5.4-mini", "gpt-5.4-pro", "gpt-5.3-codex", "gpt-5.2", "o4-mini", "o3", "o3-pro", "gpt-4.1", "gpt-4.1-mini"],
+      "verify": {
+        "method": "apiProbe",
+        "url": "https://api.openai.com/v1/models",
+        "lookFor": null,
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": "checkURL",
+        "searchQuery": null,
+        "notes": "The /v1/models endpoint returns the latest model list. Requires API key."
+      },
+      "conditionals": null,
+      "affects": null
     },
     "anthropic.models": {
       "key": "anthropic.models",
@@ -79,7 +364,19 @@
       "source": "https://docs.anthropic.com/en/docs/about-claude/models",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 7,
-      "value": ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001", "claude-sonnet-4-5-20250929"]
+      "value": ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5-20251001", "claude-sonnet-4-5-20250929"],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://docs.anthropic.com/en/docs/about-claude/models",
+        "lookFor": ["claude-opus", "claude-sonnet"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": "webSearch",
+        "searchQuery": "Anthropic Claude latest models API 2026",
+        "notes": "Check the models page for any new releases"
+      },
+      "conditionals": null,
+      "affects": null
     },
     "openrouter.models": {
       "key": "openrouter.models",
@@ -87,7 +384,19 @@
       "source": "https://openrouter.ai/models",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 7,
-      "value": ["anthropic/claude-opus-4-6", "anthropic/claude-sonnet-4-6", "openai/gpt-5.4", "openai/gpt-5.4-mini", "google/gemini-2.5-pro-preview", "deepseek/deepseek-r1"]
+      "value": ["anthropic/claude-opus-4-6", "anthropic/claude-sonnet-4-6", "openai/gpt-5.4", "openai/gpt-5.4-mini", "google/gemini-2.5-pro-preview", "deepseek/deepseek-r1"],
+      "verify": {
+        "method": "apiProbe",
+        "url": "https://openrouter.ai/api/v1/models",
+        "lookFor": null,
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": "The /api/v1/models endpoint is public, no key needed"
+      },
+      "conditionals": null,
+      "affects": null
     },
     "venice.models": {
       "key": "venice.models",
@@ -95,7 +404,19 @@
       "source": "https://docs.venice.ai/api/models",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 7,
-      "value": ["llama-3.3-70b", "llama-3.1-405b", "deepseek-r1-671b", "qwen3-235b", "dolphin-2.9.3", "nous-theta-8b"]
+      "value": ["llama-3.3-70b", "llama-3.1-405b", "deepseek-r1-671b", "qwen3-235b", "dolphin-2.9.3", "nous-theta-8b"],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://docs.venice.ai/api/models",
+        "lookFor": ["llama", "qwen", "deepseek"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": null
+      },
+      "conditionals": null,
+      "affects": null
     },
     "local.models": {
       "key": "local.models",
@@ -103,7 +424,19 @@
       "source": "https://ollama.com/library",
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 14,
-      "value": ["qwen3:8b", "qwen3:4b", "llama3.3:70b", "llama3.1:8b", "gemma3:12b", "mistral:7b", "deepseek-r1:8b", "phi-4:14b"]
+      "value": ["qwen3:8b", "qwen3:4b", "llama3.3:70b", "llama3.1:8b", "gemma3:12b", "mistral:7b", "deepseek-r1:8b", "phi-4:14b"],
+      "verify": {
+        "method": "checkURL",
+        "url": "https://ollama.com/library",
+        "lookFor": ["qwen", "llama", "gemma"],
+        "onFound": null,
+        "onNotFound": null,
+        "fallbackMethod": null,
+        "searchQuery": null,
+        "notes": null
+      },
+      "conditionals": null,
+      "affects": null
     },
     "openai.desc": {
       "key": "openai.desc",
@@ -111,7 +444,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 60,
-      "value": "GPT-5.4, o3/o4 reasoning"
+      "value": "GPT-5.4, o3/o4 reasoning",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "anthropic.desc": {
       "key": "anthropic.desc",
@@ -119,7 +455,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 60,
-      "value": "Claude Opus 4.6, Sonnet 4.6"
+      "value": "Claude Opus 4.6, Sonnet 4.6",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "openrouter.desc": {
       "key": "openrouter.desc",
@@ -127,7 +466,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 60,
-      "value": "300+ models, one API key"
+      "value": "300+ models, one API key",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "venice.desc": {
       "key": "venice.desc",
@@ -135,7 +477,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 60,
-      "value": "Privacy-first, uncensored models"
+      "value": "Privacy-first, uncensored models",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "local.desc": {
       "key": "local.desc",
@@ -143,7 +488,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 60,
-      "value": "Qwen3, Llama 3.3, Gemma 3"
+      "value": "Qwen3, Llama 3.3, Gemma 3",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "openai.keyPlaceholder": {
       "key": "openai.keyPlaceholder",
@@ -151,7 +499,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 90,
-      "value": "sk-... or paste your key"
+      "value": "sk-... or paste your key",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     },
     "venice.keyPlaceholder": {
       "key": "venice.keyPlaceholder",
@@ -159,7 +510,10 @@
       "source": null,
       "lastVerified": "2026-03-29T00:00:00Z",
       "staleAfterDays": 90,
-      "value": "venice-... or paste your key"
+      "value": "venice-... or paste your key",
+      "verify": null,
+      "conditionals": null,
+      "affects": null
     }
   }
 }

@@ -267,15 +267,13 @@ struct OAuthServiceRow: View {
                     .foregroundColor(service.iconColor)
             }
 
-            // Info
+            // Info — subtitle resolved from volatile conditionals
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(service.productName) by \(service.companyName)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(DS.text)
 
-                Text(status == .unavailable
-                     ? "Not available via login"
-                     : "Sign in with \(service.companyName) account")
+                Text(service.oauthSubtitle)
                     .font(.system(size: 12))
                     .foregroundColor(DS.textMuted)
             }

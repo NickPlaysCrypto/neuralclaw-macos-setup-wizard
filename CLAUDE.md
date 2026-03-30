@@ -8,64 +8,84 @@ Native macOS SwiftUI setup wizard for the NeuralClaw AI agent platform. Built wi
 - **SetupWizardView.swift** — Root view with page transitions, stepper, progress bar, footer nav
 - **SetupState.swift** — ViewModel managing navigation state, page sequences, per-service API key storage, and configuration saving
 - **Models.swift** — Design system (DS), enums (WizardPage, ConsumerAI, AIProvider, OAuthAvailability, etc.)
-- **VolatileContent.swift** — `VolatileEntry`, `ContentRegistry` singleton for content that changes over time
+- **VolatileContent.swift** — Intelligent content system with urgency, verification, and conditional associations
 - **WelcomeAndProviderSteps.swift** — AI usage questionnaire, OAuth connect page, API key guide with inline key entry, provider selection
 - **ModelAndFeaturesSteps.swift** — Model picker, feature toggles with presets
 - **ChannelsAndDoneSteps.swift** — Channel toggles, summary/done page
 
-## VolatileContent System
-Content that is subject to change (API key steps, URLs, model lists, descriptions) uses the `ContentRegistry`:
+## VolatileContent System (v2)
 
-- **`VolatileContent.swift`** — Core types: `VolatileEntry`, `AnyCodableValue`, `ContentCategory`, `ContentManifest`, `ContentRegistry`
-- **`volatile_defaults.json`** — Bundled JSON manifest with all volatile content, freshness metadata, source URLs, and stale thresholds
-- **Priority**: Remote Feed > Local Cache (`~/.neuralclaw/volatile_content.json`) > Bundled Default > Hardcoded Fallback
-- **Stale thresholds**: 7 days for model lists, 30 days for steps/URLs, 60 days for labels, 90 days for key placeholders
-- **Usage**: `ContentRegistry.shared.getString("google.apiKeyURL", default: "aistudio.google.com/apikey")`
-- **Remote feed**: Stubbed (`fetchRemoteUpdates()`) — not yet implemented
-- All enum properties that consume volatile data have `private var default*` fallbacks so the app always works without a feed
+Content that changes over time is managed by `ContentRegistry` — an intelligent system that tracks freshness, carries verification instructions, and resolves conditional UI associations.
 
-### Volatile Content Categories
-| Category | Examples | Stale After |
-|---|---|---|
-| `steps` | API key creation instructions | 30 days |
-| `url` | API key page URLs | 30 days |
-| `modelList` | Available AI models | 7 days |
-| `label` | Provider descriptions | 60 days |
-| `version` | Version strings | 30 days |
+### Core Types
+- **`VolatileEntry`** — Wraps any content with metadata: category, source, `lastVerified`, `staleAfterDays`, verify instructions, and conditionals
+- **`ContentUrgency`** — Five-level gradient: `fresh → aging → stale → expired → critical`
+- **`VerifyInstructions`** — HOW to check if content is still accurate (checkURL, webSearch, apiProbe, manual)
+- **`AnyCodableValue`** — Type-erased JSON: string, strings, int, bool, null
+- **`ContentCategory`** — steps, url, modelList, version, label, status
+
+### Conditional Associations
+One value change cascades to all associated UI. Example:
+```json
+"openai.oauthStatus": {
+  "value": "comingSoon",
+  "conditionals": {
+    "available":   { "subtitle": "Sign in with OpenAI account", "badge": null, "buttonEnabled": true },
+    "comingSoon":  { "subtitle": "Sign in with OpenAI account", "badge": "Coming Soon", "buttonEnabled": false },
+    "unavailable": { "subtitle": "Not available via login",      "badge": "Unavailable", "buttonEnabled": false }
+  }
+}
+```
+Access: `ContentRegistry.shared.conditionalString("openai.oauthStatus", field: "subtitle", default: "...")`
+
+### Verification Queue
+External agents (AI) read `ContentRegistry.shared.verificationQueue` for a priority-ordered list of entries needing checking. Each entry carries `VerifyInstructions` describing the method (checkURL, webSearch, etc.), target URL, keywords to look for, and fallback strategies.
+
+### Priority Chain
+```
+Remote Feed > Local Cache (~/.neuralclaw/volatile_content.json) > Bundled JSON > Hardcoded Fallback
+```
+
+### What's Volatile
+| Property | Key Pattern | Category | Stale After |
+|---|---|---|---|
+| OAuth status | `{provider}.oauthStatus` | status | 14-30 days |
+| Product name | `{provider}.productName` | label | 90 days |
+| Company name | `{provider}.companyName` | label | 365 days |
+| API key URL | `{provider}.apiKeyURL` | url | 30 days |
+| API key steps | `{provider}.apiKeySteps` | steps | 30 days |
+| Model list | `{provider}.models` | modelList | 7 days |
+| Description | `{provider}.desc` | label | 60 days |
+| Key placeholder | `{provider}.keyPlaceholder` | label | 90 days |
 
 ## Key Patterns
 - Two wizard paths: **Consumer** (OAuth flow) and **API Key** (direct config)
 - OAuth has 3 states: `.available` (Log In button), `.comingSoon` (amber tag), `.unavailable` (grey + popover tooltip)
+- `OAuthAvailability.from(_:)` converts string values from the registry to the enum
+- `ConsumerAI.oauthSubtitle`, `.oauthButtonEnabled`, `.oauthBadge` resolve from conditionals
 - Page sequence is dynamic based on chosen path
 - Config saves to `~/.neuralclaw/config.toml`, API keys to `~/.neuralclaw/.secrets.toml` (chmod 600)
 - Per-service API keys stored in `SetupState.serviceAPIKeys` dictionary, saved via `saveServiceKey()` method
-- API Key Guide step features inline SecureField + Save button per provider card with visual feedback (green glow, ✓ badge)
+- API Key Guide step features inline SecureField + Save button per provider card with visual feedback
 
 ## Build & Run
 ```bash
-# ALWAYS kill old instances first
-pkill -f NeuralClawSetup 2>/dev/null
-sleep 0.5
-cd /Users/nick/Desktop/NeuralClawSetup
-swift run
+pkill -f NeuralClawSetup 2>/dev/null; sleep 0.5
+cd /Users/nick/Desktop/NeuralClawSetup && swift run
 ```
 
 ## Building .app Bundle
 ```bash
 bash build_app.sh
 ```
-This creates `NeuralClawSetup.app` on the Desktop.
 
 ## App Icon
-- Source: `Sources/Resources/AppIcon.icns` (brain with wizard hat)
-- Loaded at runtime via `Bundle.module` in App.swift
-- Set via `NSApp.applicationIconImage`
+- Source: `Sources/Resources/AppIcon.icns`
+- Loaded via `Bundle.module`, set via `NSApp.applicationIconImage`
 
 ## Important Notes
 - Uses SPM, NOT an Xcode project
-- Minimum macOS 13
+- Minimum macOS 13 / Swift tools 5.9
 - Window is fixed size 720x620 with hidden title bar
-- `stepIcon()`, `stepTitle()`, `stepDesc()` are helper functions (likely in one of the step files)
-- Break complex SwiftUI views into computed properties to avoid "unable to type-check" compiler errors
-- ConsumerAI maps to AIProvider via `.apiProvider` property for key storage
-- `ContentRegistry` is NOT `@MainActor` — it must be accessible from nonisolated enum computed properties
+- `ContentRegistry` is NOT `@MainActor` — must be accessible from nonisolated enum properties
+- Break complex SwiftUI views into computed properties to avoid compiler type-check timeouts
