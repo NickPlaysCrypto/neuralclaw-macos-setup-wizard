@@ -190,6 +190,7 @@ struct OAuthInfoStep: View {
     @State private var apiKeyHovered = false
     @State private var directAPIKey = ""
     @State private var apiKeySaved = false
+    @State private var showLearnInfo = false
 
     // Volatile content: title and subtitle can be updated externally
     private var panelTitle: String {
@@ -240,30 +241,55 @@ struct OAuthInfoStep: View {
 
             Spacer(minLength: 8)
 
-            // Bottom hint link
-            Button(action: state.goNext) {
-                HStack(spacing: 6) {
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 13))
-                    Text("Learn how to get an API key")
-                        .font(.system(size: 13, weight: .medium))
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
+            // Bottom hint link with info
+            HStack(spacing: 8) {
+                Button(action: state.goNext) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "key.fill")
+                            .font(.system(size: 13))
+                        Text("Learn how to get an API key")
+                            .font(.system(size: 13, weight: .medium))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    .foregroundColor(DS.accent)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 16)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(DS.accent.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(DS.accent.opacity(0.12), lineWidth: 1)
+                            )
+                    )
                 }
-                .foregroundColor(DS.accent)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(DS.accent.opacity(0.06))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(DS.accent.opacity(0.12), lineWidth: 1)
-                        )
-                )
+                .buttonStyle(.plain)
+
+                Button(action: { showLearnInfo.toggle() }) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(DS.textDim)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showLearnInfo, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("When do I need an API key?")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Text("If none of the providers you use offer Log In (OAuth) then you may be able to get an API key from them. Click to find out how.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.8))
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .frame(width: 280)
+                    .background(Color(red: 0.12, green: 0.13, blue: 0.18))
+                }
             }
-            .buttonStyle(.plain)
         }
         .padding(.horizontal, 40)
         .padding(.top, 32)
