@@ -1,9 +1,19 @@
 #!/bin/bash
 set -e
 
-PROJECT_DIR="/Users/nick/Desktop/NeuralClawSetup"
+# ─────────────────────────────────────────────────────────────────────
+# NeuralClaw Setup Wizard — Build Script
+# Builds the release binary and creates a .app bundle on the Desktop.
+# Usage: bash build_app.sh
+# ─────────────────────────────────────────────────────────────────────
+
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="NeuralClawSetup"
-DEST="/Users/nick/Desktop/${APP_NAME}.app"
+DEST="$HOME/Desktop/${APP_NAME}.app"
+
+# Kill any running instance
+pkill -f "$APP_NAME" 2>/dev/null || true
+sleep 0.3
 
 echo "🔨 Building release binary..."
 cd "$PROJECT_DIR"
